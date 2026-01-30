@@ -8,6 +8,7 @@ struct MemoryCard: Identifiable {
     var isMatched: Bool = false
 }
 
+@MainActor
 class MemoryGameState: ObservableObject {
     @Published var cards: [MemoryCard] = []
     @Published var score: Int = 0

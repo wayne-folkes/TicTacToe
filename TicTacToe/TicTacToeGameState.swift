@@ -6,6 +6,7 @@ enum Player: String {
     case o = "O"
 }
 
+@MainActor
 class TicTacToeGameState: ObservableObject {
     @Published var board: [Player?]
     @Published var currentPlayer: Player

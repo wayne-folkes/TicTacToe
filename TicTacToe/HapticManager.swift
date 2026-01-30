@@ -1,9 +1,9 @@
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
-#endif
 
 /// Manager for haptic feedback throughout the app
+@MainActor
 class HapticManager {
     static let shared = HapticManager()
     
@@ -11,31 +11,52 @@ class HapticManager {
     
     /// Generate a light impact haptic feedback
     func impact(style: UIImpactFeedbackGenerator.FeedbackStyle = .light) {
-        #if canImport(UIKit)
         guard GameStatistics.shared.hapticsEnabled else { return }
         
         let generator = UIImpactFeedbackGenerator(style: style)
         generator.impactOccurred()
-        #endif
     }
     
     /// Generate a notification haptic feedback
     func notification(type: UINotificationFeedbackGenerator.FeedbackType) {
-        #if canImport(UIKit)
         guard GameStatistics.shared.hapticsEnabled else { return }
         
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(type)
-        #endif
     }
     
     /// Generate a selection haptic feedback
     func selection() {
-        #if canImport(UIKit)
         guard GameStatistics.shared.hapticsEnabled else { return }
         
         let generator = UISelectionFeedbackGenerator()
         generator.selectionChanged()
-        #endif
     }
 }
+
+#else
+
+/// Manager for haptic feedback throughout the app (stub for non-iOS platforms)
+@MainActor
+class HapticManager {
+    static let shared = HapticManager()
+    
+    enum FeedbackStyle { case light, medium, heavy, soft, rigid }
+    enum FeedbackType { case success, warning, error }
+    
+    private init() {}
+    
+    func impact(style: FeedbackStyle = .light) {
+        // No-op on non-iOS platforms
+    }
+    
+    func notification(type: FeedbackType) {
+        // No-op on non-iOS platforms
+    }
+    
+    func selection() {
+        // No-op on non-iOS platforms
+    }
+}
+
+#endif
