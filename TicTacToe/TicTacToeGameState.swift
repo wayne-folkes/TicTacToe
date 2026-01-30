@@ -26,8 +26,10 @@ class TicTacToeGameState: ObservableObject {
         
         if checkWin() {
             winner = currentPlayer
+            GameStatistics.shared.recordTicTacToeGame(winner: currentPlayer, isDraw: false)
         } else if checkDraw() {
             isDraw = true
+            GameStatistics.shared.recordTicTacToeGame(winner: nil, isDraw: true)
         } else {
             currentPlayer = currentPlayer == .x ? .o : .x
         }

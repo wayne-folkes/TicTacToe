@@ -93,6 +93,9 @@ class HangmanGameState: ObservableObject {
         // Don't allow guesses if game is over or letter already guessed
         guard !isGameOver, !guessedLetters.contains(letter) else { return }
         
+        // Trigger haptic for valid guess
+        HapticManager.shared.impact(style: .light)
+        
         guessedLetters.insert(letter)
         
         // Check if letter is in the word
@@ -104,6 +107,7 @@ class HangmanGameState: ObservableObject {
                 isGameOver = true
                 hasWon = false
                 gamesLost += 1
+                GameStatistics.shared.recordHangmanGame(score: score, won: false)
             }
         } else {
             // Check for win (all letters guessed)
@@ -112,6 +116,7 @@ class HangmanGameState: ObservableObject {
                 hasWon = true
                 gamesWon += 1
                 score += 10
+                GameStatistics.shared.recordHangmanGame(score: score, won: true)
                 // Store the word as used only when guessed correctly
                 usedWords[selectedCategory, default: []].insert(currentWord)
                 persistUsedWords()

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DictionaryGameView: View {
     @StateObject private var gameState = DictionaryGameState()
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         ZStack {
@@ -108,9 +109,9 @@ struct DictionaryGameView: View {
             } else if option == selected {
                 return Color.red.opacity(0.9)
             }
-            return Color.white.opacity(0.5)
+            return colorScheme == .dark ? Color(white: 0.3).opacity(0.5) : Color.white.opacity(0.5)
         }
-        return Color.white.opacity(0.9)
+        return colorScheme == .dark ? Color(white: 0.2) : Color.white.opacity(0.9)
     }
 }
 

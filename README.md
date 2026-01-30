@@ -59,23 +59,45 @@ A native iOS application built with SwiftUI, featuring four engaging games in on
   - Games lost
 - **Confetti Celebration**: Animated confetti on winning
 
-## 🧭 Navigation
+## 🧭 Navigation & Settings
 - **Hamburger Menu**: Easily switch between games using the elegant side menu
+- **Settings Screen**: Configure app preferences and view statistics
+  - Toggle sound effects (ready for future audio implementation)
+  - Toggle haptic feedback
+  - View comprehensive statistics for all games
+  - Reset all statistics
+  - Links to GitHub repository
 - **Dark Mode Menu**: High-contrast menu with game icons for better visibility
 - **Smooth Transitions**: Animated menu sliding and game switching
+
+## 📊 Statistics & Persistence
+- **Persistent Storage**: All game statistics saved using UserDefaults
+- **Per-Game Tracking**:
+  - Tic-Tac-Toe: Games played, X wins, O wins, draws, win rate
+  - Memory Game: Games played, games won, high score, win rate
+  - Dictionary Game: Games played, high score
+  - Hangman: Games played, wins, losses, high score, win rate
+- **Overall Statistics**: Total games played across all games
+- **User Preferences**: Sound and haptics settings persist between sessions
 
 ## 🎨 Design
 - **Custom App Icon**: Playful burger emoji 🍔 on white background
 - **Gradient Backgrounds**: Beautiful color gradients for each game
+- **Dark Mode Support**: Optimized for both light and dark appearances
+  - Adaptive card backgrounds
+  - Proper text contrast in all modes
+  - Theme-aware UI elements
 - **Consistent UI**: Unified design language across all games
 - **Adaptive Layout**: Proper spacing to avoid status bar overlap
 - **Confetti Component**: Reusable celebration animation shared across games
+- **Haptic Feedback**: Tactile responses for interactions and game events
 
 ## 🏗️ Tech Stack
 - **Language**: Swift 6.0
 - **UI Framework**: SwiftUI
 - **Architecture**: MVVM (Model-View-ViewModel)
 - **Networking**: URLSession for API calls
+- **Persistence**: UserDefaults for statistics and preferences
 - **Testing**: XCTest with comprehensive unit tests
 - **CI/CD**: GitHub Actions for automated testing
 
@@ -118,6 +140,10 @@ TicTacToe/
 ├── TicTacToe/
 │   ├── TicTacToeApp.swift          # App entry point
 │   ├── ContentView.swift           # Main navigation & hamburger menu
+│   ├── SettingsView.swift          # Settings & statistics screen
+│   ├── GameStatistics.swift        # Persistent storage manager
+│   ├── HapticManager.swift         # Haptic feedback manager
+│   ├── DarkModeHelpers.swift       # Dark mode utilities
 │   ├── TicTacToeView.swift         # Tic-Tac-Toe UI
 │   ├── TicTacToeGameState.swift    # Tic-Tac-Toe game logic
 │   ├── MemoryGameView.swift        # Memory game UI
@@ -132,13 +158,17 @@ TicTacToe/
 │       └── AppIcon.appiconset/     # Custom burger emoji icon
 ├── Tests/
 │   ├── DictionaryGameTests.swift   # Dictionary game tests
-│   └── HangmanGameTests.swift      # Hangman game tests
+│   ├── HangmanGameTests.swift      # Hangman game tests
+│   ├── TicTacToeGameStateTests.swift # Tic-Tac-Toe game tests
+│   └── MemoryGameStateTests.swift  # Memory game tests
 ├── Package.swift                    # SwiftPM configuration
 └── README.md                        # This file
 ```
 
 ## 🧪 Testing
-The project includes comprehensive unit tests:
+The project includes comprehensive unit tests for all game logic:
+- **TicTacToeGameState**: Tests for move validation, win detection (horizontal, vertical, diagonal), draw logic, turn switching, and game reset
+- **MemoryGameState**: Tests for card pairing, matching logic, scoring, theme switching, face-up/face-down behavior, and win conditions
 - **DictionaryGameState**: Tests for initialization, API handling, and game logic
 - **HangmanGameState**: Tests for word selection, guessing logic, win/loss conditions, and category changes
 

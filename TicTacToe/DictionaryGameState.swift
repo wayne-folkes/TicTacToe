@@ -177,12 +177,18 @@ class DictionaryGameState: ObservableObject {
         guard let currentWord = currentWord else { return }
         selectedOption = answer
         
-        if answer == currentWord.definition {
+        let isCorrect = answer == currentWord.definition
+        if isCorrect {
             score += 1
             feedbackColor = .green
+            HapticManager.shared.notification(type: .success)
         } else {
             feedbackColor = .red
+            HapticManager.shared.notification(type: .error)
         }
+        
+        // Record statistics after checking the answer
+        GameStatistics.shared.recordDictionaryGame(score: score)
     }
 }
 

@@ -44,10 +44,16 @@ struct HangmanGameView: View {
         }
         .onChange(of: gameState.hasWon) { _, won in
             if won {
+                HapticManager.shared.notification(type: .success)
                 showConfetti = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                     showConfetti = false
                 }
+            }
+        }
+        .onChange(of: gameState.isGameOver) { _, isOver in
+            if isOver && !gameState.hasWon {
+                HapticManager.shared.notification(type: .error)
             }
         }
     }
