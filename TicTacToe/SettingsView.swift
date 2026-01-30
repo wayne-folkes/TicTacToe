@@ -1,102 +1,47 @@
 import SwiftUI
 
+/// Settings screen for app preferences.
+///
+/// Updated to work within TabView navigation following Apple HIG.
 struct SettingsView: View {
     @ObservedObject var statistics = GameStatistics.shared
     @State private var showResetAlert = false
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 // MARK: - Preferences Section
-                Section(header: Text("Preferences")) {
+                Section {
                     Toggle(isOn: $statistics.soundEnabled) {
-                        HStack {
-                            Image(systemName: "speaker.wave.2.fill")
-                                .foregroundColor(.blue)
-                            Text("Sound Effects")
-                        }
+                        Label("Sound Effects", systemImage: "speaker.wave.2.fill")
                     }
+                    .tint(.blue)
                     
                     Toggle(isOn: $statistics.hapticsEnabled) {
-                        HStack {
-                            Image(systemName: "hand.tap.fill")
-                                .foregroundColor(.purple)
-                            Text("Haptic Feedback")
-                        }
+                        Label("Haptic Feedback", systemImage: "hand.tap.fill")
                     }
-                }
-                
-                // MARK: - Statistics Section
-                Section(header: Text("Overall Statistics")) {
-                    HStack {
-                        Image(systemName: "gamecontroller.fill")
-                            .foregroundColor(.green)
-                        Text("Total Games Played")
-                        Spacer()
-                        Text("\(statistics.totalGamesPlayed)")
-                            .foregroundColor(.secondary)
-                    }
-                }
-                
-                // MARK: - Tic-Tac-Toe Statistics
-                Section(header: Text("Tic-Tac-Toe")) {
-                    StatRow(icon: "play.circle.fill", iconColor: .blue, label: "Games Played", value: "\(statistics.ticTacToeGamesPlayed)")
-                    StatRow(icon: "checkmark.circle.fill", iconColor: .green, label: "X Wins", value: "\(statistics.ticTacToeXWins)")
-                    StatRow(icon: "checkmark.circle.fill", iconColor: .orange, label: "O Wins", value: "\(statistics.ticTacToeOWins)")
-                    StatRow(icon: "equal.circle.fill", iconColor: .gray, label: "Draws", value: "\(statistics.ticTacToeDraws)")
-                    if statistics.ticTacToeGamesPlayed > 0 {
-                        StatRow(icon: "chart.bar.fill", iconColor: .purple, label: "Win Rate", value: String(format: "%.1f%%", statistics.ticTacToeWinRate))
-                    }
-                }
-                
-                // MARK: - Memory Game Statistics
-                Section(header: Text("Memory Game")) {
-                    StatRow(icon: "play.circle.fill", iconColor: .blue, label: "Games Played", value: "\(statistics.memoryGamesPlayed)")
-                    StatRow(icon: "checkmark.circle.fill", iconColor: .green, label: "Games Won", value: "\(statistics.memoryGamesWon)")
-                    StatRow(icon: "star.fill", iconColor: .yellow, label: "High Score", value: "\(statistics.memoryHighScore)")
-                    if statistics.memoryGamesPlayed > 0 {
-                        StatRow(icon: "chart.bar.fill", iconColor: .purple, label: "Win Rate", value: String(format: "%.1f%%", statistics.memoryWinRate))
-                    }
-                }
-                
-                // MARK: - Dictionary Game Statistics
-                Section(header: Text("Dictionary Game")) {
-                    StatRow(icon: "play.circle.fill", iconColor: .blue, label: "Games Played", value: "\(statistics.dictionaryGamesPlayed)")
-                    StatRow(icon: "star.fill", iconColor: .yellow, label: "High Score", value: "\(statistics.dictionaryHighScore)")
-                }
-                
-                // MARK: - Hangman Statistics
-                Section(header: Text("Hangman")) {
-                    StatRow(icon: "play.circle.fill", iconColor: .blue, label: "Games Played", value: "\(statistics.hangmanGamesPlayed)")
-                    StatRow(icon: "checkmark.circle.fill", iconColor: .green, label: "Games Won", value: "\(statistics.hangmanGamesWon)")
-                    StatRow(icon: "xmark.circle.fill", iconColor: .red, label: "Games Lost", value: "\(statistics.hangmanGamesLost)")
-                    StatRow(icon: "star.fill", iconColor: .yellow, label: "High Score", value: "\(statistics.hangmanHighScore)")
-                    if statistics.hangmanGamesPlayed > 0 {
-                        StatRow(icon: "chart.bar.fill", iconColor: .purple, label: "Win Rate", value: String(format: "%.1f%%", statistics.hangmanWinRate))
-                    }
+                    .tint(.blue)
+                } header: {
+                    Text("Preferences")
                 }
                 
                 // MARK: - Actions Section
                 Section {
-                    Button(action: {
+                    Button(role: .destructive) {
                         showResetAlert = true
-                    }) {
-                        HStack {
-                            Image(systemName: "trash.fill")
-                                .foregroundColor(.red)
-                            Text("Reset All Statistics")
-                                .foregroundColor(.red)
-                        }
+                    } label: {
+                        Label("Reset All Statistics", systemImage: "arrow.clockwise")
                     }
+                } footer: {
+                    Text("This will permanently delete all game statistics. This action cannot be undone.")
+                        .font(.caption)
                 }
                 
                 // MARK: - About Section
-                Section(header: Text("About")) {
+                Section {
                     HStack {
-                        Image(systemName: "info.circle.fill")
-                            .foregroundColor(.blue)
-                        Text("Version")
+                        Label("Version", systemImage: "info.circle.fill")
                         Spacer()
                         Text("1.0")
                             .foregroundColor(.secondary)
@@ -104,9 +49,7 @@ struct SettingsView: View {
                     
                     Link(destination: URL(string: "https://github.com/wayne-folkes/TicTacToe") ?? URL(string: "https://github.com")!) {
                         HStack {
-                            Image(systemName: "link.circle.fill")
-                                .foregroundColor(.blue)
-                            Text("GitHub Repository")
+                            Label("GitHub Repository", systemImage: "link.circle.fill")
                             Spacer()
                             Image(systemName: "arrow.up.right.square")
                                 .foregroundColor(.blue)
@@ -115,42 +58,25 @@ struct SettingsView: View {
                     }
                     
                     HStack {
-                        Image(systemName: "hammer.fill")
-                            .foregroundColor(.orange)
-                        Text("Built with SwiftUI")
+                        Label("Built with SwiftUI", systemImage: "hammer.fill")
                             .foregroundColor(.secondary)
                     }
+                } header: {
+                    Text("About")
                 }
             }
+            #if os(iOS)
+            .listStyle(.insetGrouped)
+            #endif
             .navigationTitle("Settings")
-            .alert("Reset Statistics", isPresented: $showResetAlert) {
+            .alert("Reset Statistics?", isPresented: $showResetAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Reset", role: .destructive) {
                     statistics.resetAllStatistics()
                 }
             } message: {
-                Text("Are you sure you want to reset all game statistics? This action cannot be undone.")
+                Text("Are you sure you want to reset all game statistics? This cannot be undone.")
             }
-        }
-    }
-}
-
-// MARK: - Stat Row Component
-struct StatRow: View {
-    let icon: String
-    let iconColor: Color
-    let label: String
-    let value: String
-    
-    var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundColor(iconColor)
-            Text(label)
-            Spacer()
-            Text(value)
-                .foregroundColor(.secondary)
-                .bold()
         }
     }
 }
