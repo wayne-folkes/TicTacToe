@@ -44,10 +44,16 @@ struct HangmanGameView: View {
         }
         .onChange(of: gameState.hasWon) { _, won in
             if won {
+                HapticManager.shared.notification(type: .success)
                 showConfetti = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                     showConfetti = false
                 }
+            }
+        }
+        .onChange(of: gameState.isGameOver) { _, isOver in
+            if isOver && !gameState.hasWon {
+                HapticManager.shared.notification(type: .error)
             }
         }
     }
@@ -159,6 +165,9 @@ struct HangmanGameView: View {
         let isInWord = gameState.currentWord.contains(letter)
         
         return Button(action: {
+            if !isGuessed {
+                HapticManager.shared.impact(style: .light)
+            }
             gameState.guessLetter(letter)
         }) {
             Text(String(letter))

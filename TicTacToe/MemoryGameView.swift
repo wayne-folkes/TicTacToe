@@ -46,6 +46,7 @@ struct MemoryGameView: View {
                             CardView(card: card)
                                 .aspectRatio(2/3, contentMode: .fit)
                                 .onTapGesture {
+                                    HapticManager.shared.impact(style: .light)
                                     withAnimation(.easeInOut(duration: 0.5)) {
                                         gameState.choose(card)
                                     }
@@ -86,6 +87,7 @@ struct MemoryGameView: View {
         }
         .onChange(of: gameState.isGameOver) { _, newValue in
             if newValue {
+                HapticManager.shared.notification(type: .success)
                 withAnimation(.easeIn(duration: 0.3)) {
                     showConfetti = true
                 }
@@ -101,13 +103,14 @@ struct MemoryGameView: View {
 
 struct CardView: View {
     let card: MemoryCard
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
                 if card.isFaceUp || card.isMatched {
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.white)
+                        .fill(colorScheme == .dark ? Color(white: 0.2) : Color.white)
                     
                     RoundedRectangle(cornerRadius: 10)
                         .strokeBorder(Color.purple, lineWidth: 3)

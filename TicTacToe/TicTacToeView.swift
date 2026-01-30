@@ -34,6 +34,10 @@ struct TicTacToeView: View {
                     ForEach(0..<9) { index in
                         CellView(player: gameState.board[index])
                             .onTapGesture {
+                                // Only provide haptic if move is valid
+                                if gameState.board[index] == nil && gameState.winner == nil && !gameState.isDraw {
+                                    HapticManager.shared.impact(style: .medium)
+                                }
                                 gameState.makeMove(at: index)
                             }
                     }
@@ -60,6 +64,7 @@ struct TicTacToeView: View {
             .padding(.top, 50)
             .onChange(of: gameState.winner) { _, newValue in
                 if newValue != nil {
+                    HapticManager.shared.notification(type: .success)
                     withAnimation(.easeIn(duration: 0.3)) {
                         showConfetti = true
                     }
@@ -100,11 +105,12 @@ struct TicTacToeView: View {
 
 struct CellView: View {
     let player: Player?
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 15)
-                .fill(Color.white.opacity(0.6))
+                .fill(Color.cardBackground)
                 .aspectRatio(1.0, contentMode: .fit)
                 .shadow(radius: 2)
             
@@ -112,7 +118,7 @@ struct CellView: View {
                 Text(player.rawValue)
                     .font(.system(size: 60, weight: .bold))
                     .foregroundColor(player == .x ? .blue : .pink)
-                    .shadow(color: .white, radius: 1)
+                    .shadow(color: colorScheme == .dark ? .white.opacity(0.3) : .white, radius: 1)
             }
         }
     }
