@@ -113,31 +113,48 @@ struct HangmanGameView: View {
     }
     
     private var letterKeyboard: some View {
-        VStack(spacing: 10) {
-            // First row: A-I
-            HStack(spacing: 8) {
-                ForEach(Array("ABCDEFGHI"), id: \.self) { letter in
-                    letterButton(letter)
+        GeometryReader { geo in
+            let available = geo.size.width
+            let spacing: CGFloat = 6
+            // Compute a key width that guarantees 10 keys + 9 gaps fit on the first row
+            let keyWidth = floor((available - spacing * 9) / 10)
+            let row1 = Array("QWERTYUIOP")
+            let row2 = Array("ASDFGHJKL")
+            let row3 = Array("ZXCVBNM")
+
+            VStack(spacing: 10) {
+                // Row 1: QWERTYUIOP
+                HStack(spacing: spacing) {
+                    ForEach(row1, id: \.self) { letter in
+                        letterButton(letter, keyWidth: keyWidth)
+                    }
                 }
-            }
-            
-            // Second row: J-R
-            HStack(spacing: 8) {
-                ForEach(Array("JKLMNOPQR"), id: \.self) { letter in
-                    letterButton(letter)
+                .frame(maxWidth: .infinity)
+
+                // Row 2: ASDFGHJKL (centered)
+                HStack(spacing: spacing) {
+                    ForEach(row2, id: \.self) { letter in
+                        letterButton(letter, keyWidth: keyWidth)
+                    }
                 }
-            }
-            
-            // Third row: S-Z
-            HStack(spacing: 8) {
-                ForEach(Array("STUVWXYZ"), id: \.self) { letter in
-                    letterButton(letter)
+                .frame(width: CGFloat(row2.count) * keyWidth + CGFloat(row2.count - 1) * spacing)
+                .frame(maxWidth: .infinity)
+
+                // Row 3: ZXCVBNM (centered)
+                HStack(spacing: spacing) {
+                    ForEach(row3, id: \.self) { letter in
+                        letterButton(letter, keyWidth: keyWidth)
+                    }
                 }
+                .frame(width: CGFloat(row3.count) * keyWidth + CGFloat(row3.count - 1) * spacing)
+                .frame(maxWidth: .infinity)
             }
         }
+        // Approximate total height to avoid layout warnings: 3 rows * 40 height + 2 inter-row spacings
+        .frame(height: 3 * 40 + 2 * 10)
     }
     
-    private func letterButton(_ letter: Character) -> some View {
+    private func letterButton(_ letter: Character, keyWidth: CGFloat) -> some View {
         let isGuessed = gameState.guessedLetters.contains(letter)
         let isInWord = gameState.currentWord.contains(letter)
         
@@ -146,7 +163,7 @@ struct HangmanGameView: View {
         }) {
             Text(String(letter))
                 .font(.system(size: 18, weight: .bold))
-                .frame(width: 35, height: 40)
+                .frame(width: keyWidth, height: 40)
                 .background(
                     isGuessed
                         ? (isInWord ? Color.green.opacity(0.6) : Color.red.opacity(0.6))
@@ -193,6 +210,14 @@ struct HangmanGameView: View {
                 Text("Reset Stats")
                     .font(.subheadline)
                     .foregroundColor(.red)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .multilineTextAlignment(.center)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background(Color.white.opacity(0.9), in: Capsule())
+                    .overlay(Capsule().stroke(Color.red.opacity(0.6), lineWidth: 1))
+                    .frame(maxWidth: .infinity)
             }
         }
     }
@@ -357,3 +382,4 @@ struct HangmanDrawingView: View {
 #Preview {
     HangmanGameView()
 }
+

@@ -24,6 +24,8 @@ class HangmanGameState: ObservableObject {
     @Published var selectedCategory: WordCategory = .animals
     
     let maxWrongGuesses = 8
+    private var usedWords: [WordCategory: Set<String>] = [:]
+    private let usedWordsDefaultsKey = "HangmanUsedWords"
     
     private let wordBank: [WordCategory: [String]] = [
         .animals: [
@@ -56,6 +58,7 @@ class HangmanGameState: ObservableObject {
     ]
     
     init() {
+        loadPersistedUsedWords()
         startNewGame()
     }
     
@@ -70,9 +73,17 @@ class HangmanGameState: ObservableObject {
         isGameOver = false
         hasWon = false
         
-        // Select a random word from the selected category
+        // Select a random word from the selected category, avoiding correctly-guessed words until exhausted
         if let words = wordBank[selectedCategory], !words.isEmpty {
-            currentWord = words.randomElement() ?? "CAT"
+            let used = usedWords[selectedCategory] ?? []
+            let available = words.filter { !used.contains($0) }
+            let pool = available.isEmpty ? words : available
+            if available.isEmpty {
+                // All words exhausted; reset the used list for this category
+                usedWords[selectedCategory] = []
+                persistUsedWords()
+            }
+            currentWord = pool.randomElement() ?? "CAT"
         } else {
             currentWord = "CAT"
         }
@@ -101,6 +112,9 @@ class HangmanGameState: ObservableObject {
                 hasWon = true
                 gamesWon += 1
                 score += 10
+                // Store the word as used only when guessed correctly
+                usedWords[selectedCategory, default: []].insert(currentWord)
+                persistUsedWords()
             }
         }
     }
@@ -125,6 +139,25 @@ class HangmanGameState: ObservableObject {
             display += " "
         }
         return display.trimmingCharacters(in: .whitespaces)
+    }
+    
+    private func persistUsedWords() {
+        var dict: [String: [String]] = [:]
+        for (category, set) in usedWords {
+            dict[category.rawValue] = Array(set)
+        }
+        UserDefaults.standard.set(dict, forKey: usedWordsDefaultsKey)
+    }
+
+    private func loadPersistedUsedWords() {
+        guard let dict = UserDefaults.standard.dictionary(forKey: usedWordsDefaultsKey) as? [String: [String]] else { return }
+        var result: [WordCategory: Set<String>] = [:]
+        for (key, values) in dict {
+            if let category = WordCategory(rawValue: key) {
+                result[category] = Set(values)
+            }
+        }
+        usedWords = result
     }
     
     func resetStats() {

@@ -126,76 +126,51 @@ class DictionaryGameState: ObservableObject {
         feedbackColor = .clear
         selectedOption = nil
         errorMessage = nil
+        apiAttempts = 0
 
-        requestRandomWord()
+        Task {
+            await requestRandomWordAsync()
+        }
     }
     
-    private func requestRandomWord() {
-        guard let url = URL(string: "https://random-word-api.herokuapp.com/word?number=1") else { return }
-
-        URLSession.shared.dataTask(with: url) { [weak self] data, _, error in
-            // Decode without touching `self` to avoid capturing it in a @Sendable context
-            let decodedFirstWord: String? = {
-                guard let data = data, error == nil,
-                      let words = try? JSONDecoder().decode([String].self, from: data) else { return nil }
-                return words.first
-            }()
-
-            Task { @MainActor in
-                guard let self = self else { return }
-                if let randomWord = decodedFirstWord {
-                    self.fetchDefinition(for: randomWord)
-                } else {
-                    self.apiAttempts += 1
-                    if self.apiAttempts >= self.maxAPIAttempts {
-                        self.errorMessage = "Using local words (API unavailable)."
-                        self.loadLocalQuestion()
-                    } else {
-                        self.requestRandomWord()
-                    }
+    private func requestRandomWordAsync() async {
+        let randomURL = URL(string: "https://random-word-api.herokuapp.com/word?number=1")!
+        while apiAttempts < maxAPIAttempts {
+            do {
+                let (data, _) = try await URLSession.shared.data(from: randomURL)
+                let words = try JSONDecoder().decode([String].self, from: data)
+                if let randomWord = words.first {
+                    if await fetchDefinitionAsync(for: randomWord) { return }
                 }
+            } catch {
+                // ignore and retry
             }
-        }.resume()
+            apiAttempts += 1
+        }
+        errorMessage = "Using local words (API unavailable)."
+        loadLocalQuestion()
     }
     
-    private func fetchDefinition(for word: String) {
-        guard let url = URL(string: "https://api.dictionaryapi.dev/api/v2/entries/en/\(word)") else { return }
-
-        URLSession.shared.dataTask(with: url) { [weak self] data, _, error in
-            // Decode without touching `self` to avoid capturing it in a @Sendable context
-            struct Parsed {
-                let term: String
-                let definition: String
+    private func fetchDefinitionAsync(for word: String) async -> Bool {
+        guard let url = URL(string: "https://api.dictionaryapi.dev/api/v2/entries/en/\(word)") else { return false }
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let entries = try JSONDecoder().decode([DictionaryEntry].self, from: data)
+            if let firstEntry = entries.first,
+               let firstMeaning = firstEntry.meanings.first,
+               let firstDef = firstMeaning.definitions.first {
+                let newWord = Word(term: firstEntry.word.capitalized, definition: firstDef.definition, difficulty: self.difficulty)
+                self.currentWord = newWord
+                self.isLoading = false
+                let pool = self.allWords.filter { $0.difficulty == self.difficulty }
+                self.generateOptions(for: newWord, pool: pool.isEmpty ? self.allWords : pool)
+                self.apiAttempts = 0
+                return true
             }
-            let parsed: Parsed? = {
-                guard let data = data, error == nil,
-                      let entries = try? JSONDecoder().decode([DictionaryEntry].self, from: data),
-                      let firstEntry = entries.first,
-                      let firstMeaning = firstEntry.meanings.first,
-                      let firstDef = firstMeaning.definitions.first else { return nil }
-                return Parsed(term: firstEntry.word.capitalized, definition: firstDef.definition)
-            }()
-
-            Task { @MainActor in
-                guard let self = self else { return }
-                if let parsed = parsed {
-                    let newWord = Word(term: parsed.term, definition: parsed.definition, difficulty: self.difficulty)
-                    self.currentWord = newWord
-                    self.isLoading = false
-                    let pool = self.allWords.filter { $0.difficulty == self.difficulty }
-                    self.generateOptions(for: newWord, pool: pool.isEmpty ? self.allWords : pool)
-                    self.apiAttempts = 0
-                } else {
-                    self.apiAttempts += 1
-                    if self.apiAttempts >= self.maxAPIAttempts {
-                        self.errorMessage = "Using local words (no definition found)."
-                        self.loadLocalQuestion()
-                    } else {
-                        self.requestRandomWord()
-                    }
-                }
-            }
-        }.resume()
+        } catch {
+            // ignore and retry
+        }
+        return false
     }
 
     func checkAnswer(_ answer: String) {
@@ -224,3 +199,4 @@ struct Meaning: Codable {
 struct Definition: Codable {
     let definition: String
 }
+
