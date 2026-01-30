@@ -17,7 +17,8 @@ let package = Package(
             name: "GamesApp",
             path: "TicTacToe",
             exclude: [
-                "TicTacToeApp.swift"
+                "TicTacToeApp.swift",
+                "Assets.xcassets"
             ]
         )
     ]
