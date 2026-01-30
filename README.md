@@ -5,6 +5,16 @@ A native iOS application built with SwiftUI, featuring four engaging games in on
 [![iOS](https://img.shields.io/badge/iOS-26.2%2B-blue.svg)](https://www.apple.com/ios/)
 [![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org/)
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-Latest-green.svg)](https://developer.apple.com/xcode/swiftui/)
+[![Tests](https://img.shields.io/badge/tests-37%20passing-brightgreen.svg)](Tests/)
+
+## 📚 Documentation
+
+- **[Architecture Guide](ARCHITECTURE.md)** - MVVM pattern, data flow, concurrency model
+- **[Contributing Guide](CONTRIBUTING.md)** - How to add games, code style, setup
+- **[Testing Guide](TESTING.md)** - Running tests, writing tests, CI/CD
+- **[API Documentation](API.md)** - External APIs, caching, error handling
+
+---
 
 ## 🎯 Features
 
@@ -175,7 +185,13 @@ The project includes comprehensive unit tests for all game logic:
 All tests are run automatically via GitHub Actions on every push.
 
 ## 🤝 Contributing
-This is a personal learning project, but suggestions and feedback are welcome!
+
+This is a personal learning project, but suggestions and feedback are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- How to set up the development environment
+- Code style guidelines
+- How to add a new game (step-by-step guide)
+- Testing requirements
+- Commit message conventions
 
 ## 📝 License
 This project is open source and available under the MIT License.
