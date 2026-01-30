@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 /// Manages persistent storage of game statistics and user preferences
 @MainActor
