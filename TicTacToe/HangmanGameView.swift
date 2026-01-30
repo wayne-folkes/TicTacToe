@@ -66,25 +66,6 @@ struct HangmanGameView: View {
                         }
                     )
                 }
-                
-                // Game Over View
-                if gameState.isGameOver {
-                    GameOverView(
-                        message: gameState.hasWon ? "🎉 You Won!" : "😢 Game Over\nThe word was: \(gameState.currentWord)",
-                        isSuccess: gameState.hasWon,
-                        onPlayAgain: {
-                            confettiTask?.cancel()
-                            showConfetti = false
-                            gameState.startNewGame()
-                        },
-                        secondaryButtonTitle: "Reset Stats",
-                        onSecondaryAction: {
-                            gameState.resetStats()
-                        }
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
-                }
             }
             .padding(.top, 16)
             .padding(.horizontal, 16)

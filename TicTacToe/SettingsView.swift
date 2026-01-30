@@ -4,7 +4,14 @@ import SwiftUI
 ///
 /// Updated to work within TabView navigation following Apple HIG.
 struct SettingsView: View {
-    @ObservedObject var statistics = GameStatistics.shared
+    private let statistics = GameStatistics.shared
+    @State private var soundEnabled: Bool
+    @State private var hapticsEnabled: Bool
+    
+    init() {
+        _soundEnabled = State(initialValue: GameStatistics.shared.soundEnabled)
+        _hapticsEnabled = State(initialValue: GameStatistics.shared.hapticsEnabled)
+    }
     @State private var showResetAlert = false
     @Environment(\.colorScheme) var colorScheme
     
@@ -13,15 +20,21 @@ struct SettingsView: View {
             List {
                 // MARK: - Preferences Section
                 Section {
-                    Toggle(isOn: $statistics.soundEnabled) {
+                    Toggle(isOn: $soundEnabled) {
                         Label("Sound Effects", systemImage: "speaker.wave.2.fill")
                     }
                     .tint(.blue)
+                    .onChange(of: soundEnabled) { _, newValue in
+                        statistics.soundEnabled = newValue
+                    }
                     
-                    Toggle(isOn: $statistics.hapticsEnabled) {
+                    Toggle(isOn: $hapticsEnabled) {
                         Label("Haptic Feedback", systemImage: "hand.tap.fill")
                     }
                     .tint(.blue)
+                    .onChange(of: hapticsEnabled) { _, newValue in
+                        statistics.hapticsEnabled = newValue
+                    }
                 } header: {
                     Text("Preferences")
                 }
