@@ -19,7 +19,7 @@ struct CountdownButton: View {
             ZStack(alignment: .leading) {
                 // Background
                 RoundedRectangle(cornerRadius: 15)
-                    .fill(Color.white)
+                    .fill(Color.gray)
                 
                 // Progress Bar
                 GeometryReader { geo in
