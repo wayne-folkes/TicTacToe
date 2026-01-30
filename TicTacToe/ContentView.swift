@@ -17,12 +17,13 @@ enum GameType: String, CaseIterable {
 struct ContentView: View {
     @State private var selectedGame: GameType = .ticTacToe
     @State private var showMenu = false
+    @State private var showSettings = false
     
     var body: some View {
         ZStack(alignment: .leading) {
             // Main Content
             VStack(spacing: 0) {
-                // Custom Header with Hamburger
+                // Custom Header with Hamburger and Settings
                 HStack {
                     Button(action: {
                         withAnimation {
@@ -39,6 +40,18 @@ struct ContentView: View {
                     .padding(.leading)
                     
                     Spacer()
+                    
+                    Button(action: {
+                        showSettings = true
+                    }) {
+                        Image(systemName: "gearshape.fill")
+                            .font(.title)
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(Color.black.opacity(0.2))
+                            .clipShape(Circle())
+                    }
+                    .padding(.trailing)
                 }
                 .padding(.top, 50) // Adjust for safe area
                 .zIndex(10)
@@ -103,6 +116,27 @@ struct ContentView: View {
                             .foregroundColor(.white)
                         }
                         
+                        Divider()
+                            .background(Color.white)
+                            .padding(.vertical)
+                        
+                        Button(action: {
+                            showSettings = true
+                            withAnimation {
+                                showMenu = false
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "gearshape.fill")
+                                Text("Settings")
+                                    .font(.headline)
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .cornerRadius(10)
+                        }
+                        .foregroundColor(.white)
+                        
                         Spacer()
                     }
                     .padding()
@@ -118,6 +152,9 @@ struct ContentView: View {
             }
         }
         .ignoresSafeArea(.all, edges: .top) // Allow header to go up
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+        }
     }
     
     func iconForGame(_ game: GameType) -> String {

@@ -183,6 +183,9 @@ class DictionaryGameState: ObservableObject {
         } else {
             feedbackColor = .red
         }
+        
+        // Record game when score reaches a milestone or on any answer
+        GameStatistics.shared.recordDictionaryGame(score: score)
     }
 }
 

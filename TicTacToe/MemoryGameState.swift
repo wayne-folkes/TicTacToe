@@ -89,6 +89,7 @@ class MemoryGameState: ObservableObject {
     private func checkForWin() {
         if cards.allSatisfy({ $0.isMatched }) {
             isGameOver = true
+            GameStatistics.shared.recordMemoryGame(score: score, won: true)
         }
     }
 }

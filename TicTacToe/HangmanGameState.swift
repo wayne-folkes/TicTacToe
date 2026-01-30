@@ -104,6 +104,7 @@ class HangmanGameState: ObservableObject {
                 isGameOver = true
                 hasWon = false
                 gamesLost += 1
+                GameStatistics.shared.recordHangmanGame(score: score, won: false)
             }
         } else {
             // Check for win (all letters guessed)
@@ -112,6 +113,7 @@ class HangmanGameState: ObservableObject {
                 hasWon = true
                 gamesWon += 1
                 score += 10
+                GameStatistics.shared.recordHangmanGame(score: score, won: true)
                 // Store the word as used only when guessed correctly
                 usedWords[selectedCategory, default: []].insert(currentWord)
                 persistUsedWords()
