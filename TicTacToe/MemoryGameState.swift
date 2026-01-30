@@ -67,6 +67,15 @@ class MemoryGameState: ObservableObject {
     /// Index of the single face-up card (nil if 0 or 2 cards are face up)
     private var indexOfTheOneAndOnlyFaceUpCard: Int?
     
+    /// Whether a mismatch is being processed (blocks new card selections during delay).
+    @Published var isProcessingMismatch: Bool = false
+    
+    /// IDs of cards currently in mismatch state (for shake animation).
+    @Published var mismatchedCardIds: Set<UUID> = []
+    
+    /// Task for delayed card flip-back after mismatch.
+    private var flipBackTask: Task<Void, Never>?
+    
     /// Available themes for the Memory game.
     enum MemoryTheme: String, CaseIterable, Identifiable {
         case animals = "Animals"
@@ -120,6 +129,11 @@ class MemoryGameState: ObservableObject {
     /// Creates 24 cards (12 pairs) from the current theme's emojis and shuffles them.
     /// Resets score, game over state, and face-up card tracking.
     func startNewGame() {
+        // Cancel any pending flip-back task
+        flipBackTask?.cancel()
+        mismatchedCardIds = []
+        isProcessingMismatch = false
+        
         var newCards: [MemoryCard] = []
         // Take 12 unique emojis and create 2 cards for each (12 pairs = 24 cards)
         let selectedEmojis = currentTheme.emojis.prefix(12) 
@@ -135,34 +149,82 @@ class MemoryGameState: ObservableObject {
         indexOfTheOneAndOnlyFaceUpCard = nil
     }
     
+    deinit {
+        // Ensure task is cancelled when state is deallocated
+        flipBackTask?.cancel()
+    }
+    
     /// Handle a card flip when the player taps a card.
     ///
     /// This method implements the core game logic:
     /// 1. Ignore taps on already face-up or matched cards
-    /// 2. If this is the first card: flip it face up
-    /// 3. If this is the second card: check for match
+    /// 2. Block taps during mismatch processing delay
+    /// 3. If this is the first card: flip it face up
+    /// 4. If this is the second card: check for match
     ///    - Match: keep both cards face up, award points, play success sound
-    ///    - No match: lose a point (cards flip back automatically on next turn)
-    /// 4. Check if game is won (all pairs matched)
+    ///    - No match: lose a point, play lose sound, show for 1.5s, then flip back
+    /// 5. Check if game is won (all pairs matched)
     ///
     /// - Parameter card: The card that was tapped
     func choose(_ card: MemoryCard) {
+        // Block selection during mismatch processing
+        guard !isProcessingMismatch else { return }
+        
         if let chosenIndex = cards.firstIndex(where: { $0.id == card.id }),
            !cards[chosenIndex].isFaceUp,
            !cards[chosenIndex].isMatched
         {
             if let potentialMatchIndex = indexOfTheOneAndOnlyFaceUpCard {
+                // Second card selected - check for match
+                cards[chosenIndex].isFaceUp = true
+                
                 if cards[chosenIndex].content == cards[potentialMatchIndex].content {
+                    // MATCH - cards stay face up
                     cards[chosenIndex].isMatched = true
                     cards[potentialMatchIndex].isMatched = true
                     score += 2
                     SoundManager.shared.play(.success)
+                    indexOfTheOneAndOnlyFaceUpCard = nil
                 } else {
+                    // MISMATCH - delay flip back by 1.5 seconds
                     score -= 1
+                    
+                    // Play sound and haptic immediately
+                    SoundManager.shared.play(.lose)
+                    HapticManager.shared.notification(type: .error)
+                    
+                    // Mark cards for shake animation
+                    mismatchedCardIds = [
+                        cards[chosenIndex].id,
+                        cards[potentialMatchIndex].id
+                    ]
+                    
+                    isProcessingMismatch = true
+                    let mismatchedIndices = [chosenIndex, potentialMatchIndex]
+                    
+                    // Cancel any existing flip task
+                    flipBackTask?.cancel()
+                    
+                    // Delay 1.5 seconds before flipping back
+                    flipBackTask = Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(1.5))
+                        guard !Task.isCancelled else { return }
+                        
+                        // Flip back the mismatched cards
+                        for index in mismatchedIndices {
+                            if index < self.cards.count && !self.cards[index].isMatched {
+                                self.cards[index].isFaceUp = false
+                            }
+                        }
+                        
+                        // Clear mismatch state
+                        self.mismatchedCardIds = []
+                        self.isProcessingMismatch = false
+                        self.indexOfTheOneAndOnlyFaceUpCard = nil
+                    }
                 }
-                cards[chosenIndex].isFaceUp = true
-                indexOfTheOneAndOnlyFaceUpCard = nil
             } else {
+                // First card selected - flip all non-matched face-up cards back
                 for index in cards.indices {
                     if cards[index].isFaceUp && !cards[index].isMatched {
                          cards[index].isFaceUp = false

@@ -106,7 +106,7 @@ final class MemoryGameStateTests: XCTestCase {
         XCTAssertEqual(state.score, -1)
     }
     
-    func testThirdCardFlipsFirstTwoDown() {
+    func testThirdCardFlipsFirstTwoDown() async {
         let state = MemoryGameState()
         
         // Find three cards with different content
@@ -124,19 +124,24 @@ final class MemoryGameStateTests: XCTestCase {
         let index2 = state.cards.firstIndex(where: { $0.id == card2.id })!
         XCTAssertTrue(state.cards[index2].isFaceUp)
         
-        // Choose third card - should flip first two down
+        // Cards should still be face up (mismatch processing with 1.5s delay)
+        XCTAssertTrue(state.isProcessingMismatch, "Should be processing mismatch")
+        
+        // Third card tap should be blocked during processing
         state.choose(card3)
         let index3 = state.cards.firstIndex(where: { $0.id == card3.id })!
+        XCTAssertFalse(state.cards[index3].isFaceUp, "Third card should not flip during processing")
         
-        // First two should be face down (unless they were matched)
-        if !state.cards[index1].isMatched {
-            XCTAssertFalse(state.cards[index1].isFaceUp)
-        }
-        if !state.cards[index2].isMatched {
-            XCTAssertFalse(state.cards[index2].isFaceUp)
-        }
+        // Wait for the 1.5 second delay
+        try? await Task.sleep(for: .seconds(1.6))
         
-        // Third card should be face up
+        // After delay, first two cards should flip back
+        XCTAssertFalse(state.cards[index1].isFaceUp)
+        XCTAssertFalse(state.cards[index2].isFaceUp)
+        XCTAssertFalse(state.isProcessingMismatch, "Should no longer be processing")
+        
+        // Now third card should be selectable
+        state.choose(card3)
         XCTAssertTrue(state.cards[index3].isFaceUp)
     }
     

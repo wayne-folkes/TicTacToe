@@ -4,6 +4,7 @@ struct MemoryGameView: View {
     @StateObject private var gameState = MemoryGameState()
     @State private var showConfetti = false
     @State private var confettiTask: Task<Void, Never>?
+    @State private var shakeOffsets: [UUID: CGFloat] = [:]
     
     var body: some View {
         VStack(spacing: 0) {
@@ -33,7 +34,11 @@ struct MemoryGameView: View {
                     ForEach(gameState.cards) { card in
                         CardView(card: card)
                             .aspectRatio(2/3, contentMode: .fit)
+                            .offset(x: shakeOffsets[card.id] ?? 0)
                             .onTapGesture {
+                                // Disable taps during mismatch processing
+                                guard !gameState.isProcessingMismatch else { return }
+                                
                                 SoundManager.shared.play(.flip)
                                 HapticManager.shared.impact(style: .light)
                                 withAnimation(.easeInOut(duration: 0.5)) {
@@ -43,6 +48,19 @@ struct MemoryGameView: View {
                     }
                 }
                 .padding(16)
+            }
+            .onChange(of: gameState.mismatchedCardIds) { _, ids in
+                // Trigger shake animation for mismatched cards
+                for cardId in ids where !ids.isEmpty {
+                    withAnimation(.default.repeatCount(3).speed(6)) {
+                        shakeOffsets[cardId] = 10
+                    }
+                    // Reset after animation completes
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(0.5))
+                        shakeOffsets[cardId] = 0
+                    }
+                }
             }
             
             if gameState.isGameOver {

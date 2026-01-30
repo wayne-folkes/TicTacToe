@@ -54,6 +54,21 @@ class TicTacToeGameState: ObservableObject {
     /// Whether the game ended in a draw (all cells filled, no winner)
     @Published var isDraw: Bool
     
+    /// Current game mode (two player or vs AI)
+    @Published var gameMode: GameMode = .twoPlayer
+    
+    /// AI difficulty level (only used when gameMode is .vsAI)
+    @Published var aiDifficulty: AIDifficulty = .medium
+    
+    /// Whether the AI is currently "thinking" (prevents player moves)
+    @Published var isAIThinking: Bool = false
+    
+    /// AI player instance (created when game mode is vsAI)
+    private var aiPlayer: AIPlayer?
+    
+    /// Task for AI move with delay
+    private var aiMoveTask: Task<Void, Never>?
+    
     /// Initialize a new game with an empty board and X as the starting player.
     init() {
         self.board = Array(repeating: nil, count: 9)
@@ -66,12 +81,14 @@ class TicTacToeGameState: ObservableObject {
     ///
     /// This method validates the move, updates the board, checks for win/draw conditions,
     /// and switches to the next player if the game continues. If the game ends (win or draw),
-    /// statistics are automatically recorded.
+    /// statistics are automatically recorded. In AI mode, triggers AI move after player move.
     ///
     /// - Parameter index: The board position (0-8) where the current player wants to move
     ///
-    /// - Note: Invalid moves are silently ignored (occupied cell, game over, out of bounds)
+    /// - Note: Invalid moves are silently ignored (occupied cell, game over, out of bounds, AI thinking)
     func makeMove(at index: Int) {
+        // Block moves during AI thinking or if move is invalid
+        guard !isAIThinking else { return }
         guard board[index] == nil, winner == nil, !isDraw else { return }
         
         board[index] = currentPlayer
@@ -84,18 +101,107 @@ class TicTacToeGameState: ObservableObject {
             GameStatistics.shared.recordTicTacToeGame(winner: nil, isDraw: true)
         } else {
             currentPlayer = currentPlayer == .x ? .o : .x
+            
+            // Trigger AI move if in AI mode and it's AI's turn
+            if gameMode == .vsAI && currentPlayer == .o && !isDraw && winner == nil {
+                makeAIMove()
+            }
         }
     }
     
     /// Reset the game to initial state for a new round.
     ///
-    /// Clears the board, resets to X's turn, and clears win/draw flags.
-    /// Does not affect statistics.
+    /// Clears the board, resets to X's turn, clears winner/draw state,
+    /// and cancels any pending AI tasks. Sets up AI player if in vsAI mode.
     func resetGame() {
+        // Cancel any pending AI move
+        aiMoveTask?.cancel()
+        isAIThinking = false
+        
         board = Array(repeating: nil, count: 9)
         currentPlayer = .x
         winner = nil
         isDraw = false
+        
+        // Setup AI if in AI mode
+        if gameMode == .vsAI {
+            aiPlayer = AIPlayer(difficulty: aiDifficulty)
+        } else {
+            aiPlayer = nil
+        }
+    }
+    
+    /// Change the game mode and reset the game.
+    ///
+    /// - Parameter mode: New game mode to use
+    func changeGameMode(_ mode: GameMode) {
+        gameMode = mode
+        resetGame()
+    }
+    
+    /// Change the AI difficulty and reset the game if in AI mode.
+    ///
+    /// - Parameter difficulty: New AI difficulty level
+    func changeAIDifficulty(_ difficulty: AIDifficulty) {
+        aiDifficulty = difficulty
+        if gameMode == .vsAI {
+            resetGame()
+        }
+    }
+    
+    // MARK: - AI Move Logic
+    
+    /// Trigger the AI to make a move after a delay for natural feel.
+    ///
+    /// Delays are based on difficulty:
+    /// - Easy: 0.5 seconds
+    /// - Medium: 0.8 seconds
+    /// - Hard: 1.2 seconds
+    private func makeAIMove() {
+        guard let aiPlayer = aiPlayer else { return }
+        
+        isAIThinking = true
+        
+        // Cancel any existing AI move task
+        aiMoveTask?.cancel()
+        
+        // Delay for natural feel
+        let thinkingDelay: TimeInterval = {
+            switch aiDifficulty {
+            case .easy: return 0.5
+            case .medium: return 0.8
+            case .hard: return 1.2
+            }
+        }()
+        
+        aiMoveTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(thinkingDelay))
+            guard !Task.isCancelled else { return }
+            
+            let move = aiPlayer.chooseMove(board: self.board)
+            
+            // Play sound for AI move
+            SoundManager.shared.play(.tap)
+            HapticManager.shared.impact(style: .light)
+            
+            self.board[move] = .o
+            
+            if self.checkWin() {
+                self.winner = .o
+                GameStatistics.shared.recordTicTacToeGame(winner: .o, isDraw: false)
+            } else if self.checkDraw() {
+                self.isDraw = true
+                GameStatistics.shared.recordTicTacToeGame(winner: nil, isDraw: true)
+            } else {
+                self.currentPlayer = .x
+            }
+            
+            self.isAIThinking = false
+        }
+    }
+    
+    deinit {
+        aiMoveTask?.cancel()
     }
     
     /// Check if the current player has won the game.

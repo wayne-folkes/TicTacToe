@@ -17,10 +17,37 @@ struct TicTacToeView: View {
             Color.cardBackground
                 .ignoresSafeArea()
             
-            VStack(spacing: 20) {
+            VStack(spacing: 16) {
+                // Game Mode Picker
+                Picker("Mode", selection: $gameState.gameMode) {
+                    ForEach(GameMode.allCases) { mode in
+                        Text(mode == .twoPlayer ? "👤 vs 👤" : "👤 vs 🤖").tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .onChange(of: gameState.gameMode) { _, mode in
+                    gameState.changeGameMode(mode)
+                }
+                
+                // Difficulty Picker (only for AI mode)
+                if gameState.gameMode == .vsAI {
+                    Picker("Difficulty", selection: $gameState.aiDifficulty) {
+                        ForEach(AIDifficulty.allCases) { difficulty in
+                            Text(difficulty.rawValue).tag(difficulty)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, 16)
+                    .onChange(of: gameState.aiDifficulty) { _, difficulty in
+                        gameState.changeAIDifficulty(difficulty)
+                    }
+                }
+                
                 // Header
                 VStack(spacing: 8) {
-                    Text("Tic Tac Toe")
+                    Text(gameState.isAIThinking ? "AI Thinking..." : "Tic Tac Toe")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
@@ -29,7 +56,6 @@ struct TicTacToeView: View {
                         .font(.title2)
                         .foregroundColor(.secondary)
                 }
-                .padding(.top, 16)
                 
                 Spacer()
                 
@@ -38,7 +64,7 @@ struct TicTacToeView: View {
                         CellView(player: gameState.board[index])
                             .onTapGesture {
                                 // Play sound and haptic if move is valid
-                                if gameState.board[index] == nil && gameState.winner == nil && !gameState.isDraw {
+                                if !gameState.isAIThinking && gameState.board[index] == nil && gameState.winner == nil && !gameState.isDraw {
                                     SoundManager.shared.play(.tap)
                                     HapticManager.shared.impact(style: .medium)
                                 }
@@ -106,9 +132,17 @@ struct TicTacToeView: View {
     
     var statusText: String {
         if let winner = gameState.winner {
-            return "\(winner.rawValue) Wins!"
+            if gameState.gameMode == .vsAI {
+                return winner == .x ? "🎉 You Win!" : "😔 AI Wins!"
+            } else {
+                return "🎉 Player \(winner.rawValue) Wins!"
+            }
         } else if gameState.isDraw {
-            return "It's a Draw!"
+            return "🤝 It's a Draw!"
+        } else if gameState.isAIThinking {
+            return "⏳ AI is thinking..."
+        } else if gameState.gameMode == .vsAI {
+            return gameState.currentPlayer == .x ? "Your Turn (X)" : "AI's Turn (O)"
         } else {
             return "Player \(gameState.currentPlayer.rawValue)'s Turn"
         }
