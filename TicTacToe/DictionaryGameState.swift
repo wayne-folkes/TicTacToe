@@ -181,9 +181,11 @@ class DictionaryGameState: ObservableObject {
         if isCorrect {
             score += 1
             feedbackColor = .green
+            SoundManager.shared.play(.success)
             HapticManager.shared.notification(type: .success)
         } else {
             feedbackColor = .red
+            SoundManager.shared.play(.lose)
             HapticManager.shared.notification(type: .error)
         }
         

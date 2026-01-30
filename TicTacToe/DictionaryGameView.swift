@@ -68,6 +68,7 @@ struct DictionaryGameView: View {
                     VStack(spacing: 15) {
                         ForEach(gameState.options, id: \.self) { option in
                             Button(action: {
+                                SoundManager.shared.play(.tap)
                                 gameState.checkAnswer(option)
                             }) {
                                 Text(option)
@@ -87,6 +88,7 @@ struct DictionaryGameView: View {
                     
                     if gameState.selectedOption != nil {
                         CountdownButton(action: {
+                            SoundManager.shared.play(.click)
                             withAnimation {
                                 gameState.nextQuestion()
                             }

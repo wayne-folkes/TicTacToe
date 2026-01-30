@@ -21,10 +21,12 @@ struct TicTacToeView: View {
                 .animation(.easeInOut(duration: 0.5), value: gameState.currentPlayer)
             
             VStack(spacing: 20) {
+                // Use shared GameHeaderView (no score for Tic-Tac-Toe)
                 Text("Tic Tac Toe")
                     .font(.largeTitle)
                     .bold()
                     .foregroundColor(.white)
+                    .padding(.top, 60)
                 
                 Text(statusText)
                     .font(.title2)
@@ -34,8 +36,9 @@ struct TicTacToeView: View {
                     ForEach(0..<9) { index in
                         CellView(player: gameState.board[index])
                             .onTapGesture {
-                                // Only provide haptic if move is valid
+                                // Play sound and haptic if move is valid
                                 if gameState.board[index] == nil && gameState.winner == nil && !gameState.isDraw {
+                                    SoundManager.shared.play(.tap)
                                     HapticManager.shared.impact(style: .medium)
                                 }
                                 gameState.makeMove(at: index)
@@ -46,6 +49,7 @@ struct TicTacToeView: View {
                 
                 Button(action: {
                     showConfetti = false
+                    SoundManager.shared.play(.click)
                     gameState.resetGame()
                 }) {
                     Text("Restart Game")
@@ -61,9 +65,9 @@ struct TicTacToeView: View {
                 .opacity(gameState.winner != nil || gameState.isDraw ? 1.0 : 0.0)
             }
             .padding()
-            .padding(.top, 50)
             .onChange(of: gameState.winner) { _, newValue in
                 if newValue != nil {
+                    SoundManager.shared.play(.win)
                     HapticManager.shared.notification(type: .success)
                     withAnimation(.easeIn(duration: 0.3)) {
                         showConfetti = true
@@ -77,6 +81,7 @@ struct TicTacToeView: View {
             }
             .onChange(of: gameState.isDraw) { _, newValue in
                 if newValue {
+                    SoundManager.shared.play(.lose)
                     withAnimation(.easeIn(duration: 0.3)) {
                         showConfetti = false
                     }

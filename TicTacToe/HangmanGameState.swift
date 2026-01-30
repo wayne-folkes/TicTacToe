@@ -110,6 +110,7 @@ class HangmanGameState: ObservableObject {
                 GameStatistics.shared.recordHangmanGame(score: score, won: false)
             }
         } else {
+            SoundManager.shared.play(.success)
             // Check for win (all letters guessed)
             if isWordComplete() {
                 isGameOver = true

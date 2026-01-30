@@ -44,6 +44,7 @@ struct HangmanGameView: View {
         }
         .onChange(of: gameState.hasWon) { _, won in
             if won {
+                SoundManager.shared.play(.win)
                 HapticManager.shared.notification(type: .success)
                 showConfetti = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
@@ -53,6 +54,7 @@ struct HangmanGameView: View {
         }
         .onChange(of: gameState.isGameOver) { _, isOver in
             if isOver && !gameState.hasWon {
+                SoundManager.shared.play(.lose)
                 HapticManager.shared.notification(type: .error)
             }
         }
@@ -165,6 +167,7 @@ struct HangmanGameView: View {
         let isInWord = gameState.currentWord.contains(letter)
         
         return Button(action: {
+            SoundManager.shared.play(.click)
             gameState.guessLetter(letter)
         }) {
             Text(String(letter))
@@ -199,6 +202,7 @@ struct HangmanGameView: View {
             
             Button(action: {
                 showConfetti = false
+                SoundManager.shared.play(.click)
                 gameState.startNewGame()
             }) {
                 Text("New Game")
@@ -211,6 +215,7 @@ struct HangmanGameView: View {
             }
             
             Button(action: {
+                SoundManager.shared.play(.click)
                 gameState.resetStats()
             }) {
                 Text("Reset Stats")

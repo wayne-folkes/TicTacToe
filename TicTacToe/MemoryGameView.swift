@@ -46,6 +46,7 @@ struct MemoryGameView: View {
                             CardView(card: card)
                                 .aspectRatio(2/3, contentMode: .fit)
                                 .onTapGesture {
+                                    SoundManager.shared.play(.flip)
                                     HapticManager.shared.impact(style: .light)
                                     withAnimation(.easeInOut(duration: 0.5)) {
                                         gameState.choose(card)
@@ -59,6 +60,7 @@ struct MemoryGameView: View {
                 if gameState.isGameOver {
                     Button(action: {
                         showConfetti = false
+                        SoundManager.shared.play(.click)
                         withAnimation {
                             gameState.startNewGame()
                         }
@@ -87,6 +89,7 @@ struct MemoryGameView: View {
         }
         .onChange(of: gameState.isGameOver) { _, newValue in
             if newValue {
+                SoundManager.shared.play(.win)
                 HapticManager.shared.notification(type: .success)
                 withAnimation(.easeIn(duration: 0.3)) {
                     showConfetti = true

@@ -68,6 +68,7 @@ class MemoryGameState: ObservableObject {
                     cards[chosenIndex].isMatched = true
                     cards[potentialMatchIndex].isMatched = true
                     score += 2
+                    SoundManager.shared.play(.success)
                 } else {
                     score -= 1
                 }
