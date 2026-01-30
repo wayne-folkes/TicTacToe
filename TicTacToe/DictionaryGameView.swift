@@ -6,18 +6,16 @@ struct DictionaryGameView: View {
     
     var body: some View {
         ZStack {
-            // Background
-            LinearGradient(gradient: Gradient(colors: [Color.green, Color.teal]),
-                           startPoint: .topLeading,
-                           endPoint: .bottomTrailing)
-                .edgesIgnoringSafeArea(.all)
+            // Clean background following Apple HIG
+            Color.cardBackground
+                .ignoresSafeArea()
             
             VStack(spacing: 30) {
                 // Header with GameHeaderView
                 GameHeaderView(
                     title: "Dictionary Game",
                     score: gameState.score,
-                    scoreColor: .white
+                    scoreColor: .primary
                 )
                 
                 // Difficulty Selector
@@ -37,11 +35,11 @@ struct DictionaryGameView: View {
                 if gameState.isLoading {
                     VStack {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .progressViewStyle(CircularProgressViewStyle(tint: .dictionaryAccent))
                             .scaleEffect(1.5)
                         Text("Fetching a random word...")
                             .font(.headline)
-                            .foregroundColor(.white)
+                            .foregroundColor(.secondary)
                             .padding()
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -49,12 +47,11 @@ struct DictionaryGameView: View {
                     VStack(spacing: 10) {
                         Text("Definition of:")
                             .font(.headline)
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(.secondary)
                         
                         Text(word.term)
                             .font(.system(size: 40, weight: .heavy))
-                            .foregroundColor(.white)
-                            .shadow(radius: 5)
+                            .foregroundColor(.primary)
                     }
                     .padding()
                     
@@ -67,7 +64,7 @@ struct DictionaryGameView: View {
                                 Text(option)
                                     .font(.body)
                                     .fontWeight(.medium)
-                                    .foregroundColor(.black)
+                                    .foregroundColor(.primary)
                                     .padding()
                                     .frame(maxWidth: .infinity)
                                     .background(buttonColor(for: option))
@@ -100,13 +97,13 @@ struct DictionaryGameView: View {
     private func buttonColor(for option: String) -> Color {
         if let selected = gameState.selectedOption {
             if option == gameState.currentWord?.definition {
-                return Color.green.opacity(0.9)
+                return Color.successColor
             } else if option == selected {
-                return Color.red.opacity(0.9)
+                return Color.errorColor
             }
-            return colorScheme == .dark ? Color(white: 0.3).opacity(0.5) : Color.white.opacity(0.5)
+            return Color.elevatedCardBackground.opacity(0.5)
         }
-        return colorScheme == .dark ? Color(white: 0.2) : Color.white.opacity(0.9)
+        return Color.elevatedCardBackground
     }
 }
 

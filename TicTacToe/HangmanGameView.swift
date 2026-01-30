@@ -7,12 +7,8 @@ struct HangmanGameView: View {
     
     var body: some View {
         ZStack {
-            LinearGradient(
-                gradient: Gradient(colors: [Color.blue.opacity(0.3), Color.purple.opacity(0.3)]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            Color.cardBackground
+                .ignoresSafeArea()
             
             VStack(spacing: 20) {
                 // Header with GameHeaderView
@@ -30,7 +26,7 @@ struct HangmanGameView: View {
                         Text("\(gameState.gamesWon)")
                             .font(.title3)
                             .fontWeight(.bold)
-                            .foregroundColor(.green)
+                            .foregroundColor(.successColor)
                     }
                     
                     VStack {
@@ -40,7 +36,7 @@ struct HangmanGameView: View {
                         Text("\(gameState.gamesLost)")
                             .font(.title3)
                             .fontWeight(.bold)
-                            .foregroundColor(.red)
+                            .foregroundColor(.errorColor)
                     }
                 }
                 
@@ -124,8 +120,8 @@ struct HangmanGameView: View {
             .font(.system(size: 36, weight: .bold, design: .monospaced))
             .tracking(8)
             .padding()
-            .background(Color.white.opacity(0.8))
-            .cornerRadius(10)
+            .background(Color.elevatedCardBackground.opacity(0.6))
+            .cornerRadius(12)
     }
     
     private var letterKeyboard: some View {
@@ -183,8 +179,8 @@ struct HangmanGameView: View {
                 .frame(width: keyWidth, height: 40)
                 .background(
                     isGuessed
-                        ? (isInWord ? Color.green.opacity(0.6) : Color.red.opacity(0.6))
-                        : Color.blue.opacity(0.3)
+                        ? (isInWord ? Color.successColor.opacity(0.7) : Color.errorColor.opacity(0.7))
+                        : Color.hangmanAccent.opacity(0.3)
                 )
                 .foregroundColor(isGuessed ? .white : .primary)
                 .cornerRadius(8)

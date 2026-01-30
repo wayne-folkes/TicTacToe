@@ -14,12 +14,9 @@ struct TicTacToeView: View {
     
     var body: some View {
         ZStack {
-            // Dynamic Background
-            LinearGradient(gradient: Gradient(colors: gameState.currentPlayer == .x ? [Color.blue, Color.cyan] : [Color.pink, Color.orange]),
-                           startPoint: .topLeading,
-                           endPoint: .bottomTrailing)
-                .edgesIgnoringSafeArea(.all)
-                .animation(.easeInOut(duration: 0.5), value: gameState.currentPlayer)
+            // Clean background following Apple HIG
+            Color.cardBackground
+                .ignoresSafeArea()
             
             VStack(spacing: 20) {
                 // Header
@@ -27,11 +24,11 @@ struct TicTacToeView: View {
                     Text("Tic Tac Toe")
                         .font(.largeTitle)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     
                     Text(statusText)
                         .font(.title2)
-                        .foregroundColor(.white.opacity(0.9))
+                        .foregroundColor(.secondary)
                 }
                 .padding(.top, 60)
                 
@@ -116,20 +113,22 @@ struct TicTacToeView: View {
 
 struct CellView: View {
     let player: Player?
-    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 15)
-                .fill(Color.cardBackground)
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.elevatedCardBackground)
                 .aspectRatio(1.0, contentMode: .fit)
-                .shadow(radius: 2)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.borderColor, lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
             
             if let player = player {
                 Text(player.rawValue)
                     .font(.system(size: 60, weight: .bold))
-                    .foregroundColor(player == .x ? .blue : .pink)
-                    .shadow(color: colorScheme == .dark ? .white.opacity(0.3) : .white, radius: 1)
+                    .foregroundColor(player == .x ? .playerX : .playerO)
             }
         }
     }

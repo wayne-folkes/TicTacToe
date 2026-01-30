@@ -7,18 +7,16 @@ struct MemoryGameView: View {
     
     var body: some View {
         ZStack {
-            // Background
-            LinearGradient(gradient: Gradient(colors: [Color.purple, Color.blue]),
-                           startPoint: .topLeading,
-                           endPoint: .bottomTrailing)
-                .edgesIgnoringSafeArea(.all)
+            // Clean background following Apple HIG
+            Color.cardBackground
+                .ignoresSafeArea()
             
             VStack {
                 // Header with GameHeaderView
                 GameHeaderView(
                     title: "Memory Game",
                     score: gameState.score,
-                    scoreColor: .white
+                    scoreColor: .primary
                 )
                 
                 // Theme Selector
@@ -99,25 +97,30 @@ struct MemoryGameView: View {
 
 struct CardView: View {
     let card: MemoryCard
-    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
                 if card.isFaceUp || card.isMatched {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(colorScheme == .dark ? Color(white: 0.2) : Color.white)
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.elevatedCardBackground)
                     
-                    RoundedRectangle(cornerRadius: 10)
-                        .strokeBorder(Color.purple, lineWidth: 3)
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(Color.memoryAccent, lineWidth: 2)
                         
                     Text(card.content)
                         .font(.system(size: geometry.size.width * 0.7))
                         .opacity(card.isMatched ? 0.5 : 1)
                 } else {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(LinearGradient(gradient: Gradient(colors: [Color.orange, Color.red]), startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .shadow(radius: 2)
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.memoryAccent, Color.memoryAccent.opacity(0.7)]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
                 }
             }
             .rotation3DEffect(Angle.degrees(card.isFaceUp ? 0 : 180), axis: (x: 0, y: 1, z: 0))
