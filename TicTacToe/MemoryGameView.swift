@@ -35,29 +35,53 @@ struct MemoryGameView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
             
-            ScrollView {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
-                    ForEach(gameState.cards) { card in
-                        CardView(
-                            card: card,
-                            isDisabled: gameState.isProcessingMismatch || card.isFaceUp || card.isMatched
-                        )
-                        .aspectRatio(2/3, contentMode: .fit)
-                        .offset(x: shakeOffsets[card.id] ?? 0)
-                        .onTapGesture {
-                            // Disable taps during mismatch processing
-                            guard !gameState.isProcessingMismatch else { return }
-                            
-                            SoundManager.shared.play(.flip)
-                            HapticManager.shared.impact(style: .light)
-                            withAnimation(.easeInOut(duration: 0.5)) {
-                                gameState.choose(card)
+            // Memory grid with responsive sizing to fit on screen
+            GeometryReader { geometry in
+                let availableHeight = geometry.size.height
+                let availableWidth = geometry.size.width
+                
+                // Calculate optimal card size to fit 5 rows + spacing
+                let horizontalPadding: CGFloat = 32 // 16 per side
+                let spacing: CGFloat = 8
+                let columns: CGFloat = 4
+                let rows: CGFloat = 5
+                
+                let cardWidth = (availableWidth - horizontalPadding - (spacing * (columns - 1))) / columns
+                let cardHeight = (availableHeight - (spacing * (rows - 1))) / rows
+                
+                // Use the limiting dimension to maintain aspect ratio
+                let finalCardWidth = min(cardWidth, cardHeight * 2/3)
+                let finalCardHeight = finalCardWidth * 3/2
+                
+                VStack(spacing: spacing) {
+                    ForEach(0..<Int(rows), id: \.self) { row in
+                        HStack(spacing: spacing) {
+                            ForEach(0..<Int(columns), id: \.self) { col in
+                                let index = row * Int(columns) + col
+                                if index < gameState.cards.count {
+                                    CardView(
+                                        card: gameState.cards[index],
+                                        isDisabled: gameState.isProcessingMismatch || gameState.cards[index].isFaceUp || gameState.cards[index].isMatched
+                                    )
+                                    .frame(width: finalCardWidth, height: finalCardHeight)
+                                    .offset(x: shakeOffsets[gameState.cards[index].id] ?? 0)
+                                    .onTapGesture {
+                                        guard !gameState.isProcessingMismatch else { return }
+                                        
+                                        SoundManager.shared.play(.flip)
+                                        HapticManager.shared.impact(style: .light)
+                                        withAnimation(.easeInOut(duration: 0.5)) {
+                                            gameState.choose(gameState.cards[index])
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
-                .padding(16)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .padding(.horizontal, 16)
             .onChange(of: gameState.mismatchedCardIds) { _, ids in
                 // Trigger shake animation for mismatched cards
                 for cardId in ids where !ids.isEmpty {

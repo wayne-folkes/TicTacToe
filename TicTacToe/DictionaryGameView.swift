@@ -75,6 +75,7 @@ struct DictionaryGameView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         #if os(macOS)
+        .focusable()
         .onKeyPress { press in
             handleKeyPress(press)
         }

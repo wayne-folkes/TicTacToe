@@ -104,6 +104,7 @@ struct HangmanGameView: View {
             confettiTask?.cancel()
         }
         #if os(macOS)
+        .focusable()
         .onKeyPress { press in
             handleKeyPress(press)
         }

@@ -124,6 +124,7 @@ struct TicTacToeView: View {
                 confettiTask?.cancel()
             }
             #if os(macOS)
+            .focusable()
             .onKeyPress { press in
                 handleKeyPress(press)
             }
