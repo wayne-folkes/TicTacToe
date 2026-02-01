@@ -103,7 +103,46 @@ struct HangmanGameView: View {
         .onDisappear {
             confettiTask?.cancel()
         }
+        #if os(macOS)
+        .onKeyPress { press in
+            handleKeyPress(press)
+        }
+        #endif
     }
+    
+    #if os(macOS)
+    /// Handles keyboard input on macOS for letter guessing
+    private func handleKeyPress(_ press: KeyPress) -> KeyPress.Result {
+        // Extract first character from key press
+        guard let character = press.characters.first else {
+            return .ignored
+        }
+        
+        // Convert to uppercase for consistency
+        let letter = Character(character.uppercased())
+        
+        // Validate: must be a letter (A-Z)
+        guard letter.isLetter, letter.isASCII else {
+            return .ignored
+        }
+        
+        // Ignore if game is over
+        guard !gameState.isGameOver else {
+            return .ignored
+        }
+        
+        // Ignore if letter already guessed
+        guard !gameState.guessedLetters.contains(letter) else {
+            return .ignored
+        }
+        
+        // Play sound and make the guess
+        SoundManager.shared.play(.click)
+        gameState.guessLetter(letter)
+        
+        return .handled
+    }
+    #endif
     
     private var categoryPicker: some View {
         Picker("Category", selection: $gameState.selectedCategory) {
@@ -178,23 +217,60 @@ struct HangmanGameView: View {
         let isGuessed = gameState.guessedLetters.contains(letter)
         let isInWord = gameState.currentWord.contains(letter)
         
-        return Button(action: {
-            SoundManager.shared.play(.click)
-            gameState.guessLetter(letter)
-        }) {
+        return LetterButtonView(
+            letter: letter,
+            keyWidth: keyWidth,
+            isGuessed: isGuessed,
+            isInWord: isInWord,
+            isGameOver: gameState.isGameOver,
+            onTap: {
+                SoundManager.shared.play(.click)
+                gameState.guessLetter(letter)
+            }
+        )
+    }
+}
+
+// Separate button view to support hover state
+struct LetterButtonView: View {
+    let letter: Character
+    let keyWidth: CGFloat
+    let isGuessed: Bool
+    let isInWord: Bool
+    let isGameOver: Bool
+    let onTap: () -> Void
+    
+    @State private var isHovered = false
+    
+    var body: some View {
+        Button(action: onTap) {
             Text(String(letter))
                 .font(.headline)
                 .fontWeight(.bold)
                 .frame(width: keyWidth, height: 40)
-                .background(
-                    isGuessed
-                        ? (isInWord ? Color.successColor.opacity(0.7) : Color.errorColor.opacity(0.7))
-                        : Color.hangmanAccent.opacity(0.3)
-                )
+                .background(backgroundColor)
                 .foregroundColor(isGuessed ? .white : .primary)
                 .cornerRadius(8)
+                .scaleEffect(isHovered && !isGuessed && !isGameOver ? 1.05 : 1.0)
+                .animation(.easeInOut(duration: 0.1), value: isHovered)
         }
-        .disabled(isGuessed || gameState.isGameOver)
+        .disabled(isGuessed || isGameOver)
+        #if os(macOS)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        #endif
+    }
+    
+    private var backgroundColor: Color {
+        if isGuessed {
+            return isInWord ? Color.successColor.opacity(0.7) : Color.errorColor.opacity(0.7)
+        }
+        #if os(macOS)
+        return Color.hangmanAccent.opacity(isHovered ? 0.4 : 0.3)
+        #else
+        return Color.hangmanAccent.opacity(0.3)
+        #endif
     }
 }
 

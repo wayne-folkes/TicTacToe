@@ -38,19 +38,22 @@ struct MemoryGameView: View {
             ScrollView {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
                     ForEach(gameState.cards) { card in
-                        CardView(card: card)
-                            .aspectRatio(2/3, contentMode: .fit)
-                            .offset(x: shakeOffsets[card.id] ?? 0)
-                            .onTapGesture {
-                                // Disable taps during mismatch processing
-                                guard !gameState.isProcessingMismatch else { return }
-                                
-                                SoundManager.shared.play(.flip)
-                                HapticManager.shared.impact(style: .light)
-                                withAnimation(.easeInOut(duration: 0.5)) {
-                                    gameState.choose(card)
-                                }
+                        CardView(
+                            card: card,
+                            isDisabled: gameState.isProcessingMismatch || card.isFaceUp || card.isMatched
+                        )
+                        .aspectRatio(2/3, contentMode: .fit)
+                        .offset(x: shakeOffsets[card.id] ?? 0)
+                        .onTapGesture {
+                            // Disable taps during mismatch processing
+                            guard !gameState.isProcessingMismatch else { return }
+                            
+                            SoundManager.shared.play(.flip)
+                            HapticManager.shared.impact(style: .light)
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                gameState.choose(card)
                             }
+                        }
                     }
                 }
                 .padding(16)
@@ -120,6 +123,9 @@ struct MemoryGameView: View {
 
 struct CardView: View {
     let card: MemoryCard
+    let isDisabled: Bool
+    
+    @State private var isHovered = false
     
     var body: some View {
         GeometryReader { geometry in
@@ -143,10 +149,17 @@ struct CardView: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
+                        .shadow(color: .black.opacity(isHovered && !isDisabled ? 0.15 : 0.1), radius: isHovered && !isDisabled ? 4 : 2, y: 1)
                 }
             }
             .rotation3DEffect(Angle.degrees(card.isFaceUp ? 0 : 180), axis: (x: 0, y: 1, z: 0))
+            .scaleEffect(isHovered && !isDisabled ? 1.05 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: isHovered)
+            #if os(macOS)
+            .onHover { hovering in
+                isHovered = hovering
+            }
+            #endif
         }
     }
 }

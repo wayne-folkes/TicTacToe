@@ -42,22 +42,15 @@ struct DictionaryGameView: View {
                     
                     VStack(spacing: 12) {
                         ForEach(gameState.options, id: \.self) { option in
-                            Button(action: {
-                                SoundManager.shared.play(.tap)
-                                gameState.checkAnswer(option)
-                            }) {
-                                Text(option)
-                                    .font(.body)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.primary)
-                                    .padding(16)
-                                    .frame(maxWidth: .infinity)
-                                    .multilineTextAlignment(.center)
-                                    .background(buttonColor(for: option))
-                                    .cornerRadius(12)
-                                    .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
-                            }
-                            .disabled(gameState.selectedOption != nil)
+                            AnswerOptionButton(
+                                option: option,
+                                backgroundColor: buttonColor(for: option),
+                                isDisabled: gameState.selectedOption != nil,
+                                onTap: {
+                                    SoundManager.shared.play(.tap)
+                                    gameState.checkAnswer(option)
+                                }
+                            )
                         }
                     }
                     .padding(.horizontal, 16)
@@ -81,7 +74,36 @@ struct DictionaryGameView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+        #if os(macOS)
+        .onKeyPress { press in
+            handleKeyPress(press)
+        }
+        #endif
     }
+    
+    #if os(macOS)
+    /// Handles keyboard input on macOS for answer selection
+    private func handleKeyPress(_ press: KeyPress) -> KeyPress.Result {
+        // Number keys 1-4 to select answers
+        guard let number = Int(press.characters),
+              (1...4).contains(number) else {
+            return .ignored
+        }
+        
+        // Ignore if no options available or already answered
+        guard gameState.options.count >= number,
+              gameState.selectedOption == nil else {
+            return .ignored
+        }
+        
+        // Select the option at index (number - 1)
+        let option = gameState.options[number - 1]
+        SoundManager.shared.play(.click)
+        gameState.checkAnswer(option)
+        
+        return .handled
+    }
+    #endif
     
     private func buttonColor(for option: String) -> Color {
         if let selected = gameState.selectedOption {
@@ -93,6 +115,39 @@ struct DictionaryGameView: View {
             return Color.elevatedCardBackground.opacity(0.5)
         }
         return Color.elevatedCardBackground
+    }
+}
+
+// Separate answer button view to support hover state
+struct AnswerOptionButton: View {
+    let option: String
+    let backgroundColor: Color
+    let isDisabled: Bool
+    let onTap: () -> Void
+    
+    @State private var isHovered = false
+    
+    var body: some View {
+        Button(action: onTap) {
+            Text(option)
+                .font(.body)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+                .padding(16)
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
+                .background(backgroundColor)
+                .cornerRadius(12)
+                .shadow(color: .black.opacity(isHovered && !isDisabled ? 0.1 : 0.05), radius: isHovered && !isDisabled ? 4 : 2, y: 1)
+                .scaleEffect(isHovered && !isDisabled ? 1.02 : 1.0)
+                .animation(.easeInOut(duration: 0.15), value: isHovered)
+        }
+        .disabled(isDisabled)
+        #if os(macOS)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        #endif
     }
 }
 

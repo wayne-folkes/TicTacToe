@@ -61,15 +61,18 @@ struct TicTacToeView: View {
                 
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
                     ForEach(0..<9) { index in
-                        CellView(player: gameState.board[index])
-                            .onTapGesture {
-                                // Play sound and haptic if move is valid
-                                if !gameState.isAIThinking && gameState.board[index] == nil && gameState.winner == nil && !gameState.isDraw {
-                                    SoundManager.shared.play(.tap)
-                                    HapticManager.shared.impact(style: .medium)
-                                }
-                                gameState.makeMove(at: index)
+                        CellView(
+                            player: gameState.board[index],
+                            isDisabled: gameState.isAIThinking || gameState.board[index] != nil || gameState.winner != nil || gameState.isDraw
+                        )
+                        .onTapGesture {
+                            // Play sound and haptic if move is valid
+                            if !gameState.isAIThinking && gameState.board[index] == nil && gameState.winner == nil && !gameState.isDraw {
+                                SoundManager.shared.play(.tap)
+                                HapticManager.shared.impact(style: .medium)
                             }
+                            gameState.makeMove(at: index)
+                        }
                     }
                 }
                 .padding(.horizontal, 16)
@@ -120,6 +123,11 @@ struct TicTacToeView: View {
             .onDisappear {
                 confettiTask?.cancel()
             }
+            #if os(macOS)
+            .onKeyPress { press in
+                handleKeyPress(press)
+            }
+            #endif
             
             // Confetti overlay
             if showConfetti {
@@ -129,6 +137,33 @@ struct TicTacToeView: View {
             }
         }
     }
+    
+    #if os(macOS)
+    /// Handles keyboard input on macOS for making moves
+    private func handleKeyPress(_ press: KeyPress) -> KeyPress.Result {
+        // Number keys 1-9 or numpad 1-9 to select squares
+        guard let number = Int(press.characters),
+              (1...9).contains(number) else {
+            return .ignored
+        }
+        
+        // Convert to board index (1-9 becomes 0-8)
+        let index = number - 1
+        
+        // Ignore if game over, not player's turn, or square occupied
+        guard gameState.winner == nil,
+              !gameState.isDraw,
+              gameState.board[index] == nil,
+              !gameState.isAIThinking else {
+            return .ignored
+        }
+        
+        // Make the move
+        gameState.makeMove(at: index)
+        
+        return .handled
+    }
+    #endif
     
     var statusText: String {
         if let winner = gameState.winner {
@@ -151,17 +186,22 @@ struct TicTacToeView: View {
 
 struct CellView: View {
     let player: Player?
+    let isDisabled: Bool
+    
+    @State private var isHovered = false
     
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.elevatedCardBackground)
+                .fill(backgroundColor)
                 .aspectRatio(1.0, contentMode: .fit)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(Color.borderColor, lineWidth: 1)
                 )
-                .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+                .shadow(color: .black.opacity(isHovered && !isDisabled ? 0.1 : 0.05), radius: isHovered && !isDisabled ? 4 : 2, y: 1)
+                .scaleEffect(isHovered && !isDisabled ? 1.05 : 1.0)
+                .animation(.easeInOut(duration: 0.15), value: isHovered)
             
             if let player = player {
                 Text(player.rawValue)
@@ -170,5 +210,19 @@ struct CellView: View {
                     .foregroundColor(player == .x ? .playerX : .playerO)
             }
         }
+        #if os(macOS)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        #endif
+    }
+    
+    private var backgroundColor: Color {
+        #if os(macOS)
+        if isHovered && !isDisabled {
+            return Color.elevatedCardBackground.opacity(0.9)
+        }
+        #endif
+        return Color.elevatedCardBackground
     }
 }

@@ -38,6 +38,13 @@ struct GamesGridView: View {
             .navigationDestination(item: $selectedGame) { game in
                 gameView(for: game)
             }
+            #if os(macOS)
+            .onReceive(NotificationCenter.default.publisher(for: .switchToGame)) { notification in
+                if let gameType = notification.object as? GameType {
+                    selectedGame = gameType
+                }
+            }
+            #endif
         }
     }
     
@@ -60,6 +67,7 @@ struct GamesGridView: View {
 struct GameCard: View {
     let gameType: GameType
     @ObservedObject private var stats = GameStatistics.shared
+    @State private var isHovered = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -86,9 +94,11 @@ struct GameCard: View {
         #if os(iOS)
         .background(Color(.secondarySystemBackground))
         #else
-        .background(Color.gray.opacity(0.1))
+        .background(Color.gray.opacity(isHovered ? 0.15 : 0.1))
         #endif
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .scaleEffect(isHovered ? 1.02 : 1.0)
+        .animation(.easeInOut(duration: 0.15), value: isHovered)
         #if os(iOS)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
@@ -99,6 +109,11 @@ struct GameCard: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.gray.opacity(0.2), lineWidth: 1)
         )
+        #endif
+        #if os(macOS)
+        .onHover { hovering in
+            isHovered = hovering
+        }
         #endif
     }
     
