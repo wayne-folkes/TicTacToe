@@ -61,6 +61,8 @@ struct GamesGridView: View {
             HangmanGameView()
         case .twentyFortyEight:
             TwentyFortyEightView()
+        case .mathQuiz:
+            MathQuizView()
         }
     }
 }
@@ -125,7 +127,8 @@ struct GameCard: View {
         case .memory: return "brain.head.profile"
         case .dictionary: return "book.closed.fill"
         case .hangman: return "figure.stand"
-        case .twentyFortyEight: return "square.grid.4x4"
+        case .twentyFortyEight: return "square.grid.3x3.fill"
+        case .mathQuiz: return "plus.forwardslash.minus"
         }
     }
     
@@ -136,6 +139,7 @@ struct GameCard: View {
         case .dictionary: return .green
         case .hangman: return .orange
         case .twentyFortyEight: return .yellow
+        case .mathQuiz: return .pink
         }
     }
     
@@ -151,6 +155,11 @@ struct GameCard: View {
             return "\(stats.hangmanGamesWon) wins"
         case .twentyFortyEight:
             return "Best: \(UserDefaults.standard.integer(forKey: "TwentyFortyEight_BestScore"))"
+        case .mathQuiz:
+            let bestTimed = UserDefaults.standard.integer(forKey: "mathQuizBestScoreTimed")
+            let bestPractice = UserDefaults.standard.integer(forKey: "mathQuizBestScorePractice")
+            let best = max(bestTimed, bestPractice)
+            return "Best: \(best)"
         }
     }
 }

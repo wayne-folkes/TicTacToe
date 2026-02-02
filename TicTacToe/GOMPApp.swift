@@ -72,6 +72,11 @@ struct GOMPApp: App {
             }
             .keyboardShortcut("5", modifiers: .command)
             
+            Button("Math Quiz") {
+                NotificationCenter.default.post(name: .switchToGame, object: GameType.mathQuiz)
+            }
+            .keyboardShortcut("6", modifiers: .command)
+            
             Divider()
             
             Button("Toggle Sound") {

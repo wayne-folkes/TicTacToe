@@ -178,16 +178,14 @@ class TwentyFortyEightGameState: ObservableObject {
         score = prevScore
         moveCount = prevMoves
         
+        // Reset game over state (undo brings game back to playable state)
+        isGameOver = false
+        
         // Clear undo state
         canUndo = false
         previousGrid = nil
         previousScore = nil
         previousMoveCount = nil
-        
-        // Reset game over if applicable
-        if isGameOver {
-            isGameOver = false
-        }
     }
     
     // MARK: - Move Logic

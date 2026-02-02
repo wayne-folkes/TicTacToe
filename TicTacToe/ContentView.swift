@@ -15,6 +15,7 @@ enum GameType: String, CaseIterable {
     case dictionary = "Dictionary Game"
     case hangman = "Hangman"
     case twentyFortyEight = "2048"
+    case mathQuiz = "Math Quiz"
 }
 
 enum AppSection: String, CaseIterable, Identifiable {
