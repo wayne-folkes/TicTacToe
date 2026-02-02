@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MemoryGameView: View {
     @StateObject private var gameState = MemoryGameState()
+    @ObservedObject private var sessionTracker = SessionTimeTracker.shared
     @State private var showConfetti = false
     @State private var confettiTask: Task<Void, Never>?
     @State private var shakeOffsets: [UUID: CGFloat] = [:]
@@ -157,8 +158,12 @@ struct MemoryGameView: View {
                 }
             }
         }
+        .onAppear {
+            sessionTracker.startSession(for: "Memory")
+        }
         .onDisappear {
             confettiTask?.cancel()
+            sessionTracker.endSession()
         }
     }
 }

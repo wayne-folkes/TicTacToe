@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HangmanGameView: View {
     @StateObject private var gameState = HangmanGameState()
+    @ObservedObject private var sessionTracker = SessionTimeTracker.shared
     @State private var showConfetti = false
     @State private var confettiTask: Task<Void, Never>?
     
@@ -100,8 +101,12 @@ struct HangmanGameView: View {
                 HapticManager.shared.notification(type: .error)
             }
         }
+        .onAppear {
+            sessionTracker.startSession(for: "Hangman")
+        }
         .onDisappear {
             confettiTask?.cancel()
+            sessionTracker.endSession()
         }
         #if os(macOS)
         .focusable()

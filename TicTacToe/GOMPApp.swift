@@ -10,6 +10,9 @@ import SwiftUI
 
 @main
 struct GOMPApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var sessionTracker = SessionTimeTracker.shared
+    
     var body: some Scene {
         WindowGroup("GOMP") {
             ContentView()
@@ -17,6 +20,9 @@ struct GOMPApp: App {
                 .frame(minWidth: 800, idealWidth: 1000, maxWidth: .infinity,
                        minHeight: 600, idealHeight: 800, maxHeight: .infinity)
                 #endif
+                .onChange(of: scenePhase) { _, newPhase in
+                    handleScenePhaseChange(newPhase)
+                }
         }
         #if os(macOS)
         .windowStyle(.hiddenTitleBar)
@@ -25,6 +31,25 @@ struct GOMPApp: App {
             macOSCommands()
         }
         #endif
+    }
+    
+    /// Handle app lifecycle changes for session tracking
+    private func handleScenePhaseChange(_ phase: ScenePhase) {
+        Task { @MainActor in
+            switch phase {
+            case .background:
+                // App going to background - pause session timer
+                sessionTracker.pauseSession()
+            case .active:
+                // App becoming active - resume session timer if there was one
+                sessionTracker.resumeSession()
+            case .inactive:
+                // Transitional state - no action needed
+                break
+            @unknown default:
+                break
+            }
+        }
     }
     
     #if os(macOS)

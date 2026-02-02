@@ -45,17 +45,20 @@ class GameStatistics: ObservableObject {
         static let ticTacToeXWins = "ticTacToeXWins"
         static let ticTacToeOWins = "ticTacToeOWins"
         static let ticTacToeDraws = "ticTacToeDraws"
+        static let ticTacToeTotalTime = "ticTacToeTotalTime"
         
         // Memory Game
         static let memoryGamesPlayed = "memoryGamesPlayed"
         static let memoryGamesWon = "memoryGamesWon"
         static let memoryHighScore = "memoryHighScore"
         static let memoryPreferredTheme = "memoryPreferredTheme"
+        static let memoryTotalTime = "memoryTotalTime"
         
         // Dictionary Game
         static let dictionaryGamesPlayed = "dictionaryGamesPlayed"
         static let dictionaryHighScore = "dictionaryHighScore"
         static let dictionaryPreferredDifficulty = "dictionaryPreferredDifficulty"
+        static let dictionaryTotalTime = "dictionaryTotalTime"
         
         // Hangman
         static let hangmanGamesPlayed = "hangmanGamesPlayed"
@@ -63,6 +66,10 @@ class GameStatistics: ObservableObject {
         static let hangmanGamesLost = "hangmanGamesLost"
         static let hangmanHighScore = "hangmanHighScore"
         static let hangmanPreferredCategory = "hangmanPreferredCategory"
+        static let hangmanTotalTime = "hangmanTotalTime"
+        
+        // Session Time Tracking
+        static let totalPlayTime = "totalPlayTime"
         
         // User Preferences
         static let soundEnabled = "soundEnabled"
@@ -124,6 +131,25 @@ class GameStatistics: ObservableObject {
     
     /// User's preferred word category (e.g., "Animals", "Food", "Sports")
     @Published var hangmanPreferredCategory: String
+    
+    // MARK: - Session Time Statistics
+    
+    /// Total time spent playing Tic-Tac-Toe (in seconds)
+    @Published var ticTacToeTotalTime: TimeInterval
+    
+    /// Total time spent playing Memory game (in seconds)
+    @Published var memoryTotalTime: TimeInterval
+    
+    /// Total time spent playing Dictionary game (in seconds)
+    @Published var dictionaryTotalTime: TimeInterval
+    
+    /// Total time spent playing Hangman (in seconds)
+    @Published var hangmanTotalTime: TimeInterval
+    
+    /// Total time spent playing all games (in seconds)
+    var totalPlayTime: TimeInterval {
+        ticTacToeTotalTime + memoryTotalTime + dictionaryTotalTime + hangmanTotalTime
+    }
     
     // MARK: - User Preferences
     
@@ -191,6 +217,12 @@ class GameStatistics: ObservableObject {
         self.hangmanHighScore = userDefaults.integer(forKey: Keys.hangmanHighScore)
         self.hangmanPreferredCategory = userDefaults.string(forKey: Keys.hangmanPreferredCategory) ?? "Animals"
         
+        // Load session time stats
+        self.ticTacToeTotalTime = userDefaults.double(forKey: Keys.ticTacToeTotalTime)
+        self.memoryTotalTime = userDefaults.double(forKey: Keys.memoryTotalTime)
+        self.dictionaryTotalTime = userDefaults.double(forKey: Keys.dictionaryTotalTime)
+        self.hangmanTotalTime = userDefaults.double(forKey: Keys.hangmanTotalTime)
+        
         // Load user preferences
         self.soundEnabled = userDefaults.object(forKey: Keys.soundEnabled) as? Bool ?? true
         self.hapticsEnabled = userDefaults.object(forKey: Keys.hapticsEnabled) as? Bool ?? true
@@ -211,14 +243,25 @@ class GameStatistics: ObservableObject {
     func recordTicTacToeGame(winner: Player?, isDraw: Bool) {
         ticTacToeGamesPlayed += 1
         
+        let won: Bool
         if isDraw {
             ticTacToeDraws += 1
+            won = false
         } else if let winner = winner {
             if winner == .x {
                 ticTacToeXWins += 1
             } else {
                 ticTacToeOWins += 1
             }
+            won = true
+        } else {
+            won = false
+        }
+        
+        // Record to history
+        let duration = SessionTimeTracker.shared.elapsedTime
+        Task { @MainActor in
+            GameHistory.shared.addResult(game: "TicTacToe", won: won, score: 0, duration: duration)
         }
         
         saveToUserDefaults()
@@ -240,6 +283,12 @@ class GameStatistics: ObservableObject {
             memoryHighScore = score
         }
         
+        // Record to history
+        let duration = SessionTimeTracker.shared.elapsedTime
+        Task { @MainActor in
+            GameHistory.shared.addResult(game: "Memory", won: won, score: score, duration: duration)
+        }
+        
         saveToUserDefaults()
     }
     
@@ -251,6 +300,12 @@ class GameStatistics: ObservableObject {
         
         if score > dictionaryHighScore {
             dictionaryHighScore = score
+        }
+        
+        // Record to history (Dictionary game doesn't have clear win/loss)
+        let duration = SessionTimeTracker.shared.elapsedTime
+        Task { @MainActor in
+            GameHistory.shared.addResult(game: "Dictionary", won: score > 0, score: score, duration: duration)
         }
         
         saveToUserDefaults()
@@ -272,6 +327,12 @@ class GameStatistics: ObservableObject {
         
         if score > hangmanHighScore {
             hangmanHighScore = score
+        }
+        
+        // Record to history
+        let duration = SessionTimeTracker.shared.elapsedTime
+        Task { @MainActor in
+            GameHistory.shared.addResult(game: "Hangman", won: won, score: score, duration: duration)
         }
         
         saveToUserDefaults()
@@ -308,6 +369,12 @@ class GameStatistics: ObservableObject {
         userDefaults.set(hangmanGamesLost, forKey: Keys.hangmanGamesLost)
         userDefaults.set(hangmanHighScore, forKey: Keys.hangmanHighScore)
         userDefaults.set(hangmanPreferredCategory, forKey: Keys.hangmanPreferredCategory)
+        
+        // Session Time
+        userDefaults.set(ticTacToeTotalTime, forKey: Keys.ticTacToeTotalTime)
+        userDefaults.set(memoryTotalTime, forKey: Keys.memoryTotalTime)
+        userDefaults.set(dictionaryTotalTime, forKey: Keys.dictionaryTotalTime)
+        userDefaults.set(hangmanTotalTime, forKey: Keys.hangmanTotalTime)
     }
     
     /// Reset all game statistics to zero, preserving user preferences.
@@ -337,6 +404,78 @@ class GameStatistics: ObservableObject {
         hangmanGamesLost = 0
         hangmanHighScore = 0
         
+        // Reset session times
+        ticTacToeTotalTime = 0
+        memoryTotalTime = 0
+        dictionaryTotalTime = 0
+        hangmanTotalTime = 0
+        
         saveToUserDefaults()
     }
+    
+    /// Record session time for a specific game.
+    ///
+    /// - Parameters:
+    ///   - duration: Time played in seconds
+    ///   - game: Game identifier ("TicTacToe", "Memory", "Dictionary", "Hangman")
+    func recordSessionTime(_ duration: TimeInterval, for game: String) {
+        switch game {
+        case "TicTacToe":
+            ticTacToeTotalTime += duration
+        case "Memory":
+            memoryTotalTime += duration
+        case "Dictionary":
+            dictionaryTotalTime += duration
+        case "Hangman":
+            hangmanTotalTime += duration
+        default:
+            print("Warning: Unknown game '\(game)' for time tracking")
+        }
+        
+        saveToUserDefaults()
+    }
+    
+    /// Get average session duration for a game.
+    ///
+    /// - Parameter game: Game identifier
+    /// - Returns: Average duration in seconds, or 0 if no games played
+    func averageSessionDuration(for game: String) -> TimeInterval {
+        switch game {
+        case "TicTacToe":
+            return ticTacToeGamesPlayed > 0 ? ticTacToeTotalTime / Double(ticTacToeGamesPlayed) : 0
+        case "Memory":
+            return memoryGamesPlayed > 0 ? memoryTotalTime / Double(memoryGamesPlayed) : 0
+        case "Dictionary":
+            return dictionaryGamesPlayed > 0 ? dictionaryTotalTime / Double(dictionaryGamesPlayed) : 0
+        case "Hangman":
+            return hangmanGamesPlayed > 0 ? hangmanTotalTime / Double(hangmanGamesPlayed) : 0
+        default:
+            return 0
+        }
+    }
+    
+    /// Format time interval into human-readable string.
+    ///
+    /// - Parameter interval: Time in seconds
+    /// - Returns: Formatted string (e.g., "1h 23m" or "45m 12s")
+    static func formatTime(_ interval: TimeInterval) -> String {
+        let hours = Int(interval) / 3600
+        let minutes = Int(interval) / 60 % 60
+        let seconds = Int(interval) % 60
+        
+        if hours > 0 {
+            if minutes > 0 {
+                return "\(hours)h \(minutes)m"
+            }
+            return "\(hours)h"
+        } else if minutes > 0 {
+            if seconds > 0 {
+                return "\(minutes)m \(seconds)s"
+            }
+            return "\(minutes)m"
+        } else {
+            return "\(seconds)s"
+        }
+    }
 }
+

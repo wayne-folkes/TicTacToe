@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TicTacToeView: View {
     @StateObject private var gameState = TicTacToeGameState()
+    @ObservedObject private var sessionTracker = SessionTimeTracker.shared
     @State private var showConfetti = false
     @State private var confettiTask: Task<Void, Never>?
     
@@ -120,8 +121,12 @@ struct TicTacToeView: View {
                     }
                 }
             }
+            .onAppear {
+                sessionTracker.startSession(for: "TicTacToe")
+            }
             .onDisappear {
                 confettiTask?.cancel()
+                sessionTracker.endSession()
             }
             #if os(macOS)
             .focusable()

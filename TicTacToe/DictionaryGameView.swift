@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DictionaryGameView: View {
     @StateObject private var gameState = DictionaryGameState()
+    @ObservedObject private var sessionTracker = SessionTimeTracker.shared
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
@@ -71,6 +72,12 @@ struct DictionaryGameView: View {
             .padding(.vertical, 16)
         }
         .background(Color.cardBackground)
+        .onAppear {
+            sessionTracker.startSession(for: "Dictionary")
+        }
+        .onDisappear {
+            sessionTracker.endSession()
+        }
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
