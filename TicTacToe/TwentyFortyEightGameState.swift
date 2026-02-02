@@ -69,6 +69,12 @@ class TwentyFortyEightGameState: ObservableObject {
     /// Current color scheme
     @Published var colorScheme: ColorScheme = .classic
     
+    /// Positions of tiles that were merged in the last move (for animation)
+    @Published var lastMergedPositions: [(Int, Int)] = []
+    
+    /// Position of the newly spawned tile (for animation)
+    @Published var lastNewTilePosition: (Int, Int)? = nil
+    
     /// Previous grid state (for undo)
     private var previousGrid: [[Int?]]?
     
@@ -93,6 +99,8 @@ class TwentyFortyEightGameState: ObservableObject {
         hasShownWinMessage = false
         moveCount = 0
         canUndo = false
+        lastMergedPositions = []
+        lastNewTilePosition = nil
         previousGrid = nil
         previousScore = nil
         previousMoveCount = nil
@@ -112,6 +120,7 @@ class TwentyFortyEightGameState: ObservableObject {
         previousGrid = grid
         previousScore = score
         previousMoveCount = moveCount
+        lastMergedPositions = []  // Clear animation state from last move
         
         let oldGrid = grid
         
@@ -194,7 +203,7 @@ class TwentyFortyEightGameState: ObservableObject {
         for row in 0..<4 {
             var line = extractLine(row: row)
             line = slide(line)
-            line = merge(line)
+            line = mergeAndTrack(line, index: row, isRow: true, isReversed: false)
             line = slide(line) // Slide again after merge
             setLine(line, row: row)
         }
@@ -205,7 +214,7 @@ class TwentyFortyEightGameState: ObservableObject {
             let line = extractLine(row: row)
             var reversed = Array(line.reversed())
             reversed = slide(reversed)
-            reversed = merge(reversed)
+            reversed = mergeAndTrack(reversed, index: row, isRow: true, isReversed: true)
             reversed = slide(reversed)
             setLine(Array(reversed.reversed()), row: row)
         }
@@ -215,7 +224,7 @@ class TwentyFortyEightGameState: ObservableObject {
         for col in 0..<4 {
             var line = extractColumn(col: col)
             line = slide(line)
-            line = merge(line)
+            line = mergeAndTrack(line, index: col, isRow: false, isReversed: false)
             line = slide(line)
             setColumn(line, col: col)
         }
@@ -226,7 +235,7 @@ class TwentyFortyEightGameState: ObservableObject {
             let line = extractColumn(col: col)
             var reversed = Array(line.reversed())
             reversed = slide(reversed)
-            reversed = merge(reversed)
+            reversed = mergeAndTrack(reversed, index: col, isRow: false, isReversed: true)
             reversed = slide(reversed)
             setColumn(Array(reversed.reversed()), col: col)
         }
@@ -263,6 +272,27 @@ class TwentyFortyEightGameState: ObservableObject {
         return nonNil + nils
     }
     
+    /// Merge adjacent equal values and track merge positions for animation
+    private func mergeAndTrack(_ line: [Int?], index: Int, isRow: Bool, isReversed: Bool) -> [Int?] {
+        var result = line
+        for i in 0..<3 {
+            if let val1 = result[i], let val2 = result[i+1], val1 == val2 {
+                result[i] = val1 * 2
+                result[i+1] = nil
+                score += val1 * 2
+                
+                // Track merge position (where the merged tile ends up)
+                let gridIndex = isReversed ? (3 - i) : i
+                if isRow {
+                    lastMergedPositions.append((index, gridIndex))
+                } else {
+                    lastMergedPositions.append((gridIndex, index))
+                }
+            }
+        }
+        return result
+    }
+    
     /// Merge adjacent equal values
     private func merge(_ line: [Int?]) -> [Int?] {
         var result = line
@@ -284,6 +314,7 @@ class TwentyFortyEightGameState: ObservableObject {
         let randomCell = emptyCells.randomElement()!
         let value = Int.random(in: 0..<10) < 9 ? 2 : 4
         grid[randomCell.row][randomCell.col] = value
+        lastNewTilePosition = (randomCell.row, randomCell.col)
     }
     
     /// Get all empty cells (row, col)

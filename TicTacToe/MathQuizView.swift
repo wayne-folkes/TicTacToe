@@ -125,7 +125,7 @@ struct MathQuizView: View {
                 }
                 
                 // Question Display (only when game is active)
-                if !gameState.isGameOver && gameState.questionsAnswered > 0 {
+                if !gameState.isGameOver && !gameState.currentQuestion.isEmpty {
                     VStack(spacing: 24) {
                         // Question
                         Text(gameState.currentQuestion)

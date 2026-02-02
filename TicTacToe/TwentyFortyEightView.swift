@@ -10,6 +10,8 @@ import SwiftUI
 struct TwentyFortyEightView: View {
     @StateObject private var gameState = TwentyFortyEightGameState()
     @State private var showWinAlert = false
+    @State private var mergedTiles: Set<String> = []
+    @State private var newTile: String? = nil
     
     var body: some View {
         VStack(spacing: 0) {
@@ -128,7 +130,9 @@ struct TwentyFortyEightView: View {
                                     TileView(
                                         value: gameState.grid[row][col],
                                         size: tileSize,
-                                        colorScheme: gameState.colorScheme
+                                        colorScheme: gameState.colorScheme,
+                                        isMerged: gameState.lastMergedPositions.contains(where: { $0.0 == row && $0.1 == col }),
+                                        isNew: gameState.lastNewTilePosition?.0 == row && gameState.lastNewTilePosition?.1 == col
                                     )
                                 }
                             }
@@ -230,7 +234,7 @@ struct TwentyFortyEightView: View {
             direction = verticalAmount > 0 ? .down : .up
         }
         
-        withAnimation(.easeOut(duration: 0.2)) {
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
             if gameState.move(direction: direction) {
                 SoundManager.shared.play(.tap)
                 HapticManager.shared.impact(style: .light)
@@ -270,7 +274,7 @@ struct TwentyFortyEightView: View {
         }
         
         if let direction = direction {
-            withAnimation(.easeOut(duration: 0.2)) {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
                 if gameState.move(direction: direction) {
                     SoundManager.shared.play(.tap)
                 }
@@ -289,11 +293,15 @@ struct TileView: View {
     let value: Int?
     let size: CGFloat
     let colorScheme: TwentyFortyEightGameState.ColorScheme
+    let isMerged: Bool
+    let isNew: Bool
     
-    init(value: Int?, size: CGFloat, colorScheme: TwentyFortyEightGameState.ColorScheme = .classic) {
+    init(value: Int?, size: CGFloat, colorScheme: TwentyFortyEightGameState.ColorScheme = .classic, isMerged: Bool = false, isNew: Bool = false) {
         self.value = value
         self.size = size
         self.colorScheme = colorScheme
+        self.isMerged = isMerged
+        self.isNew = isNew
     }
     
     var body: some View {
@@ -308,6 +316,10 @@ struct TileView: View {
             }
         }
         .frame(width: size, height: size)
+        .scaleEffect(isMerged ? 1.15 : (isNew ? 0.1 : 1.0))
+        .opacity(isNew ? 0.0 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isMerged)
+        .animation(.spring(response: 0.35, dampingFraction: 0.7), value: isNew)
     }
     
     private var fontSize: CGFloat {
