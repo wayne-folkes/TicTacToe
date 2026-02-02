@@ -351,7 +351,7 @@ final class MathQuizGameState: ObservableObject {
     
     // MARK: - Cleanup
     
-    nonisolated deinit {
+    deinit {
         timerTask?.cancel()
     }
 }
