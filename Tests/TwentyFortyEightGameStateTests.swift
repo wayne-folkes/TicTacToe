@@ -128,13 +128,18 @@ final class TwentyFortyEightGameStateTests: XCTestCase {
         // Verify merge occurred
         XCTAssertTrue(gridChanged, "Grid should have changed")
         XCTAssertEqual(state.grid[0][0], 4, "Tiles should merge into 4")
-        XCTAssertNil(state.grid[0][1], "Second position should be empty after merge")
         
-        // Verify score increased by merged value
+        // After merge, position [0][1] should be empty or have a new random tile (2 or 4)
+        // We can't assert it's nil because addRandomTile() is called after the move
+        // Instead, verify the merge happened by checking the score
         XCTAssertEqual(state.score, 4, "Score should increase by 4")
         
         // Verify move count increased
         XCTAssertEqual(state.moveCount, 1)
+        
+        // Verify there are exactly 2 non-nil tiles now (merged tile + new random tile)
+        let nonNilCount = state.grid.flatMap { $0 }.compactMap { $0 }.count
+        XCTAssertEqual(nonNilCount, 2, "Should have 2 tiles: merged tile and new random tile")
     }
     
     func testMoveLeftComplexScenario() {
@@ -194,7 +199,11 @@ final class TwentyFortyEightGameStateTests: XCTestCase {
         
         // Tile should slide to top
         XCTAssertEqual(state.grid[0][0], 2, "Tile should slide to top")
-        XCTAssertNil(state.grid[3][0], "Original position should be empty")
+        
+        // After move, a new tile is added, so position [3][0] might not be empty
+        // Instead verify there are 2 tiles total (original moved + new random)
+        let nonNilCount = state.grid.flatMap { $0 }.compactMap { $0 }.count
+        XCTAssertEqual(nonNilCount, 2, "Should have 2 tiles after move")
     }
     
     func testMoveDownSlidesTiles() {
@@ -213,7 +222,11 @@ final class TwentyFortyEightGameStateTests: XCTestCase {
         
         // Tile should slide to bottom
         XCTAssertEqual(state.grid[3][0], 2, "Tile should slide to bottom")
-        XCTAssertNil(state.grid[0][0], "Original position should be empty")
+        
+        // After move, a new tile is added, so [0][0] might not be empty
+        // Verify there are 2 tiles total
+        let nonNilCount = state.grid.flatMap { $0 }.compactMap { $0 }.count
+        XCTAssertEqual(nonNilCount, 2, "Should have 2 tiles after move")
     }
     
     func testMoveDoesNotChangeGridWhenInvalid() {
