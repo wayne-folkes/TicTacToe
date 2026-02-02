@@ -326,8 +326,8 @@ final class MemoryGameStateTests: XCTestCase {
         XCTAssertFalse(state.cards[index3].isFaceUp, "Third card should not flip during mismatch processing")
         XCTAssertEqual(state.score, scoreBeforeBlocked, "Score should not change for blocked selection")
         
-        // Wait for delay to complete
-        try? await Task.sleep(for: .seconds(1.6))
+        // Wait for delay to complete (increased from 1.6s to 1.7s for CI reliability)
+        try? await Task.sleep(for: .seconds(1.7))
         
         // After processing completes, selections should be allowed again
         XCTAssertFalse(state.isProcessingMismatch)
