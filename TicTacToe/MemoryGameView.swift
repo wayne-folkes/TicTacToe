@@ -5,6 +5,7 @@ struct MemoryGameView: View {
     @State private var showConfetti = false
     @State private var confettiTask: Task<Void, Never>?
     @State private var shakeOffsets: [UUID: CGFloat] = [:]
+    @State private var highlightedMismatchIds: Set<UUID> = []
     
     var body: some View {
         VStack(spacing: 0) {
@@ -59,19 +60,21 @@ struct MemoryGameView: View {
                             ForEach(0..<Int(columns), id: \.self) { col in
                                 let index = row * Int(columns) + col
                                 if index < gameState.cards.count {
+                                    let card = gameState.cards[index]
                                     CardView(
-                                        card: gameState.cards[index],
-                                        isDisabled: gameState.isProcessingMismatch || gameState.cards[index].isFaceUp || gameState.cards[index].isMatched
+                                        card: card,
+                                        isDisabled: gameState.isProcessingMismatch || card.isFaceUp || card.isMatched,
+                                        isMismatched: highlightedMismatchIds.contains(card.id)
                                     )
                                     .frame(width: finalCardWidth, height: finalCardHeight)
-                                    .offset(x: shakeOffsets[gameState.cards[index].id] ?? 0)
+                                    .offset(x: shakeOffsets[card.id] ?? 0)
                                     .onTapGesture {
                                         guard !gameState.isProcessingMismatch else { return }
                                         
                                         SoundManager.shared.play(.flip)
                                         HapticManager.shared.impact(style: .light)
                                         withAnimation(.easeInOut(duration: 0.5)) {
-                                            gameState.choose(gameState.cards[index])
+                                            gameState.choose(card)
                                         }
                                     }
                                 }
@@ -83,16 +86,31 @@ struct MemoryGameView: View {
             }
             .padding(.horizontal, 16)
             .onChange(of: gameState.mismatchedCardIds) { _, ids in
-                // Trigger shake animation for mismatched cards
-                for cardId in ids where !ids.isEmpty {
+                // Trigger shake animation and red highlight for mismatched cards
+                guard !ids.isEmpty else {
+                    highlightedMismatchIds = []
+                    return
+                }
+                
+                // Add to highlighted set for red glow
+                highlightedMismatchIds = ids
+                
+                // Shake animation
+                for cardId in ids {
                     withAnimation(.default.repeatCount(3).speed(6)) {
                         shakeOffsets[cardId] = 10
                     }
-                    // Reset after animation completes
+                    // Reset shake after animation completes
                     Task { @MainActor in
                         try? await Task.sleep(for: .seconds(0.5))
                         shakeOffsets[cardId] = 0
                     }
+                }
+                
+                // Remove highlight after mismatch delay
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(1.5))
+                    highlightedMismatchIds = []
                 }
             }
             
@@ -148,6 +166,7 @@ struct MemoryGameView: View {
 struct CardView: View {
     let card: MemoryCard
     let isDisabled: Bool
+    let isMismatched: Bool
     
     @State private var isHovered = false
     
@@ -158,8 +177,9 @@ struct CardView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.elevatedCardBackground)
                     
+                    // Red border for mismatched cards, normal border otherwise
                     RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(Color.memoryAccent, lineWidth: 2)
+                        .strokeBorder(isMismatched ? Color.errorColor : Color.memoryAccent, lineWidth: isMismatched ? 4 : 2)
                         
                     Text(card.content)
                         .font(.system(size: geometry.size.width * 0.7))
@@ -179,6 +199,9 @@ struct CardView: View {
             .rotation3DEffect(Angle.degrees(card.isFaceUp ? 0 : 180), axis: (x: 0, y: 1, z: 0))
             .scaleEffect(isHovered && !isDisabled ? 1.05 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: isHovered)
+            // Add red glow for mismatched cards
+            .shadow(color: isMismatched ? Color.errorColor.opacity(0.8) : .clear, radius: isMismatched ? 12 : 0)
+            .animation(.easeInOut(duration: 0.2), value: isMismatched)
             #if os(macOS)
             .onHover { hovering in
                 isHovered = hovering
