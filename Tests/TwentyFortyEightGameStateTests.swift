@@ -240,7 +240,6 @@ final class TwentyFortyEightGameStateTests: XCTestCase {
             [nil, nil, nil, nil]
         ]
         
-        let gridBefore = state.grid
         let scoreBefore = state.score
         let moveCountBefore = state.moveCount
         
