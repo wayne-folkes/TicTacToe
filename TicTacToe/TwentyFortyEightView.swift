@@ -185,6 +185,9 @@ struct TwentyFortyEightView: View {
         .navigationBarTitleDisplayMode(.inline)
         .interactiveDismissDisabled(true)  // Prevent swipe-to-back from conflicting with game swipes
         #endif
+        #if canImport(UIKit)
+        .disableSwipeBack()
+        #endif
         .gesture(
             DragGesture(minimumDistance: 30)
                 .onEnded { value in
@@ -367,3 +370,4 @@ extension Color {
 #Preview {
     TwentyFortyEightView()
 }
+

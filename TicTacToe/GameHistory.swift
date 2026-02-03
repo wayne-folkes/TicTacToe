@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 /// Model representing a single game result with timestamp for historical tracking.
 ///
@@ -35,7 +36,7 @@ class GameHistory: ObservableObject {
     private let historyKey = "gameHistoryResults"
     
     /// All stored game results, newest first
-    @Published private(set) var results: [GameResult] = []
+    @Published var results: [GameResult] = []
     
     private init() {
         loadFromUserDefaults()

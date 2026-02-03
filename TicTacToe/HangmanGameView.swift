@@ -114,6 +114,9 @@ struct HangmanGameView: View {
             handleKeyPress(press)
         }
         #endif
+        #if canImport(UIKit)
+        .disableSwipeBack()
+        #endif
     }
     
     #if os(macOS)
